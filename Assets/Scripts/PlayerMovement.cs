@@ -38,9 +38,8 @@ public class PlayerMovement : MonoBehaviour
         Vector2 camMovement = lookAction.ReadValue<Vector2>();
 
         float camMoveY = invertYAxis ? camMovement.y : -camMovement.y;
-        // rotate player by x axis, cam by y.
-        transform.Rotate(0, camMovement.x * mouseSensitivityX * Time.deltaTime, 0);
-        playerCamera.transform.Rotate(new Vector3(camMoveY * mouseSensitivityY * Time.deltaTime, 0, 0), Space.Self); // rotate in local space
+        // rotare camera
+        playerCamera.transform.Rotate(new Vector3(camMoveY * mouseSensitivityY * Time.deltaTime, camMovement.x * mouseSensitivityX * Time.deltaTime, 0), Space.Self); // rotate in local space
 
         // clamp camera rotation in local space
         float localCamVertAngle = playerCamera.transform.localEulerAngles.x;
@@ -56,6 +55,6 @@ public class PlayerMovement : MonoBehaviour
 
         movement = new Vector3(axis.x, 0, axis.y) * movementSpeed * Time.deltaTime;
 
-        pcController.Move(transform.TransformDirection(movement));
+        pcController.Move(playerCamera.transform.TransformDirection(movement));
     }
 }
