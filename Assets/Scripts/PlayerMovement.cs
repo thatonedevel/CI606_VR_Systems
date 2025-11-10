@@ -55,6 +55,12 @@ public class PlayerMovement : MonoBehaviour
 
         movement = new Vector3(axis.x, 0, axis.y) * movementSpeed * Time.deltaTime;
 
+        Quaternion camTempRot = playerCamera.transform.rotation;
+
+        playerCamera.transform.rotation = Quaternion.Euler(0, playerCamera.transform.eulerAngles.y, 0); // align player rotation to camera y rotation for movement
+
         pcController.Move(playerCamera.transform.TransformDirection(movement));
+
+        playerCamera.transform.rotation = camTempRot; // restore camera rotation
     }
 }
