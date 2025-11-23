@@ -12,6 +12,9 @@ public class ScheduledAgent : MonoBehaviour
     [SerializeField] private int scheduleIndex = 0;
     [SerializeField] private NavigationState navState = NavigationState.NAVIGATING;
 
+    // true destination if the agent has to queue
+    private Transform trueDestination;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -30,11 +33,32 @@ public class ScheduledAgent : MonoBehaviour
                 break;
 
             case NavigationState.NAVIGATING:
-                // check distance to destination
-                if (npcNavMeshAgent.remainingDistance <= 1.5f)
+                // check if the target destination is an activity stand
+                if (agentSchedule[scheduleIndex].destinationTransform.parent is not null)
                 {
-                    navState = NavigationState.AT_DEST;
-                    npcNavMeshAgent.isStopped = true; // stop agent
+                    var potentialStand = agentSchedule[scheduleIndex].destinationTransform.parent.gameObject;
+                    // transform is a child
+                    if (potentialStand.CompareTag("ActivityStand"))
+                    {
+                        // check the queue - are we in queueing distance and is the queue not full?
+                        if (!potentialStand.GetComponent<AActivityStand>().isQueueFull && potentialStand.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject))
+                        {
+                            // change nav state to queueing, navigate to back of queue
+                            navState = NavigationState.QUEUEING;
+                            potentialStand.GetComponent<AActivityStand>().AddCustomerToQueue(gameObject);
+                            npcNavMeshAgent.SetDestination(potentialStand.GetComponent<AActivityStand>().GetMemberQueuePosition(gameObject));
+                        }
+                        else if (!potentialStand.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject))
+                        {
+                            // navigate to the back of the queue
+                            trueDestination = agentSchedule[scheduleIndex].destinationTransform;
+                            npcNavMeshAgent.SetDestination(potentialStand.GetComponent<AActivityStand>().GetBackOfQueuePosition());
+                        }
+                        else
+                        {
+                            // queue is full, go do something else
+                        }
+                    }
                 }
                 break;
 
@@ -55,5 +79,6 @@ public enum NavigationState
 {
     AT_DEST,
     NAVIGATING,
+    QUEUEING,
     IDLE
 }

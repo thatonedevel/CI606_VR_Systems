@@ -54,13 +54,14 @@ public abstract class AActivityStand : MonoBehaviour
 
     public Vector3 GetMemberQueuePosition(GameObject customer)
     {
+        // should be called after queue is updated
         int index = customerQueue.IndexOf(customer);
         Vector3 newDestination = Vector3.zero;
 
         // check if not at front of queue
         if (index != 0)
         {
-            newDestination = customer.transform.position + (transform.forward * -queueSpacing);
+            newDestination = transform.GetChild(0).position + (transform.forward * -queueSpacing * index);
         }
         else
         {
@@ -74,5 +75,10 @@ public abstract class AActivityStand : MonoBehaviour
     {
         float maxDist = queueSpacing * (maxQueueLength + 1);
         return Vector3.Distance(customer.transform.position, transform.GetChild(0).position) <= maxDist;
+    }
+
+    public Vector3 GetBackOfQueuePosition()
+    {
+        return transform.GetChild(0).position + (transform.forward * -queueSpacing * maxQueueLength);
     }
 }
