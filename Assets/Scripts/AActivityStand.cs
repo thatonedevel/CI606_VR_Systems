@@ -18,7 +18,27 @@ public abstract class AActivityStand : MonoBehaviour
     public GameObject currentCustomer { get; protected set; } = null;
     public bool isQueueFull { get; protected set; } = false;
 
-    public static event Action<AActivityStand> OnCustomerLeftQueue;
+    // events
+    public static event Action<AActivityStand> OnCustomerLeftStand;
+    public static event Action<GameObject> OnFinishedServingCustomer;
+
+    // customer timing
+    private float customerServeStartTime = -1f;
+    [SerializeField] private float customerServingDuration = 5f;
+    // bo
+
+    private void Update()
+    {
+        if (isServingCustomer)
+        {
+            if (customerServeStartTime != -1 && Time.time > customerServeStartTime + customerServingDuration)
+            {
+                // finished serving customer, fire event
+                OnFinishedServingCustomer?.Invoke(currentCustomer);
+                customerServeStartTime = -1;
+            }
+        }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -39,7 +59,7 @@ public abstract class AActivityStand : MonoBehaviour
 
             // check if queue has space
             isQueueFull = customerQueue.Count < maxQueueLength;
-            OnCustomerLeftQueue?.Invoke(this);
+            OnCustomerLeftStand?.Invoke(this);
             isServingCustomer = false;
         }
     }

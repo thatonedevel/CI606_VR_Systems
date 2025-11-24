@@ -1,19 +1,24 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
 
 public class ScheduledAgent : MonoBehaviour
 {
     [Header("Object Reeferences")]
     [SerializeField] private NavMeshAgent npcNavMeshAgent;
 
-    [Header("Other")]
+    [Header("Navigation Data")]
     [SerializeField] private List<ScheduleDestination> agentSchedule = new List<ScheduleDestination>();
     [SerializeField] private int scheduleIndex = 0;
-    [SerializeField] private NavigationState navState = NavigationState.NAVIGATING;
+    [SerializeField] private NavigationState navState = NavigationState.WANDERING;
+    [SerializeField] private float distanceThreshold = 1f;
+    [SerializeField] private float timeConstant; // time constant, seconds
 
     // true destination if the agent has to queue
     private Transform trueDestination;
+    // reference to the stand instance if agent is going to a vendor
+    private AActivityStand targetVendor;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -22,6 +27,10 @@ public class ScheduledAgent : MonoBehaviour
         {
             npcNavMeshAgent = GetComponent<NavMeshAgent>();
         }
+
+        // subscribe to events
+        AActivityStand.OnCustomerLeftStand += MoveInQueueListener;
+        AActivityStand.OnFinishedServingCustomer += FinishedAtStandListener;
     }
 
     // Update is called once per frame
@@ -40,19 +49,20 @@ public class ScheduledAgent : MonoBehaviour
                     // transform is a child
                     if (potentialStand.CompareTag("ActivityStand"))
                     {
+                        targetVendor = potentialStand.GetComponent<AActivityStand>();
                         // check the queue - are we in queueing distance and is the queue not full?
-                        if (!potentialStand.GetComponent<AActivityStand>().isQueueFull && potentialStand.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject))
+                        if (!targetVendor.isQueueFull && targetVendor.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject))
                         {
                             // change nav state to queueing, navigate to back of queue
                             navState = NavigationState.QUEUEING;
-                            potentialStand.GetComponent<AActivityStand>().AddCustomerToQueue(gameObject);
-                            npcNavMeshAgent.SetDestination(potentialStand.GetComponent<AActivityStand>().GetMemberQueuePosition(gameObject));
+                            targetVendor.AddCustomerToQueue(gameObject);
+                            npcNavMeshAgent.SetDestination(targetVendor.GetMemberQueuePosition(gameObject));
                         }
-                        else if (!potentialStand.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject))
+                        else if (!targetVendor.IsCustomerInQueueingDistance(gameObject))
                         {
                             // navigate to the back of the queue
                             trueDestination = agentSchedule[scheduleIndex].destinationTransform;
-                            npcNavMeshAgent.SetDestination(potentialStand.GetComponent<AActivityStand>().GetBackOfQueuePosition());
+                            npcNavMeshAgent.SetDestination(targetVendor.GetBackOfQueuePosition());
                         }
                         else
                         {
@@ -66,8 +76,83 @@ public class ScheduledAgent : MonoBehaviour
             case NavigationState.QUEUEING:
                 break;
 
+            case NavigationState.WANDERING:
+                Wander();
+                break;
             default:
                 break;
+        }
+        CheckNextScheduleItem();
+    }
+
+    // listener for finished being served
+    public void FinishedAtStandListener(GameObject customer)
+    {
+        if (customer == gameObject)
+        {
+            // move to random position
+            navState = NavigationState.WANDERING;
+            targetVendor = null;
+        }
+    }
+
+    public void MoveInQueueListener(AActivityStand source)
+    {
+        // called when we can move forward in the queue
+        if (targetVendor is null)
+        {
+            navState = NavigationState.WANDERING;
+            return;
+        }
+        else if (source != targetVendor)
+        {
+            return;
+        }
+
+        Vector3 nextPos = targetVendor.GetMemberQueuePosition(gameObject);
+        npcNavMeshAgent.SetDestination(nextPos);
+    }
+
+    private void Wander()
+    {
+        // wondering - move to a location, pick a random direction, then move
+        npcNavMeshAgent.enabled = true;
+
+        // check distance to target
+        if (npcNavMeshAgent.remainingDistance <= distanceThreshold)
+        {
+            // at target, pick random direction
+            int randomX = Random.Range(-10, 10);
+            int randomZ = Random.Range(-10, 10);
+            Vector3 randomDirection = new Vector3(randomX, 0, randomZ);
+
+            // check if random direction is valid on navmesh
+            var dest = transform.position + randomDirection;
+
+            if (npcNavMeshAgent.CalculatePath(dest, new NavMeshPath()))
+            {
+                // it's a valid path
+                npcNavMeshAgent.SetDestination(dest);
+            }
+        }
+    }
+
+    private void CheckNextScheduleItem()
+    {
+        if (scheduleIndex + 1 >= agentSchedule.Count)
+            return;
+
+        /* check if we need to go to our next destination
+         * takes priority over other logic
+         * get next location
+         * predict time needed based on straight line distance + time constant */
+        float timeNeeded = Vector3.Distance(transform.position, agentSchedule[scheduleIndex + 1].destinationTransform.position) / npcNavMeshAgent.speed + timeConstant;
+
+        // check if we are within the time needed threshold
+        if (Time.time + (timeNeeded * 1000) >= agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime())
+        {
+            scheduleIndex++;
+            navState = NavigationState.NAVIGATING;
         }
     }
 }
@@ -84,5 +169,6 @@ public enum NavigationState
     AT_DEST,
     NAVIGATING,
     QUEUEING,
+    WANDERING,
     IDLE
 }
