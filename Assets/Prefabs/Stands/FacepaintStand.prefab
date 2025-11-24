@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 1703814692429834427}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -42,6 +42,7 @@ GameObject:
   - component: {fileID: 6687011920145847747}
   - component: {fileID: 7161565586431527073}
   - component: {fileID: 4075826504874704471}
+  - component: {fileID: 6848110778398825683}
   m_Layer: 0
   m_Name: FacepaintStand
   m_TagString: VenueStand
@@ -108,6 +109,21 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.05, y: 3, z: 1}
   m_Center: {x: 0, y: 1.5, z: 0}
+--- !u!114 &6848110778398825683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3212842228691688974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf7a6e78a86a2734fa721871d4c4e1b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxQueueLength: 10
+  queueSpacing: 1.1
+  customerServingDuration: 5
 --- !u!1001 &5009033112821259240
 PrefabInstance:
   m_ObjectHideFlags: 0

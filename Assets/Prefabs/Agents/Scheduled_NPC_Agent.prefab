@@ -234,7 +234,7 @@ GameObject:
   - component: {fileID: 1781889679985493708}
   m_Layer: 0
   m_Name: Scheduled_NPC_Agent
-  m_TagString: Untagged
+  m_TagString: NPC
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -274,7 +274,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 2
-  m_BaseOffset: 0
+  m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!54 &427512479234844362
@@ -339,7 +339,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bb6bc0372538cb488ababe34aa3bd58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  npcNavMeshAgent: {fileID: 0}
+  npcNavMeshAgent: {fileID: 2041287113819954573}
   agentSchedule: []
   scheduleIndex: 0
   navState: 1
+  distanceThreshold: 1
+  timeConstant: 0
