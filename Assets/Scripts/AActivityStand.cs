@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 // partial implementation for stand objects
 // TODO: add derivative classes for player interaction at stands
-public abstract class AActivityStand : MonoBehaviour
+public class AActivityStand : MonoBehaviour
 {
     private List<GameObject> customerQueue = new List<GameObject>();
     
@@ -14,7 +14,7 @@ public abstract class AActivityStand : MonoBehaviour
     public float queueSpacing = 1.1f; // spacing between customers in the queue, public so it can be adjusted in inspector
 
     [Header("Debug / Queriable Data")]
-    public bool isServingCustomer { get; protected set; } = false; // flag used to check if units in queue can move forward
+    [SerializeField] private bool isServingCustomer = false; // flag used to check if units in queue can move forward
     public GameObject currentCustomer { get; protected set; } = null;
     public bool isQueueFull { get; protected set; } = false;
 
@@ -31,9 +31,11 @@ public abstract class AActivityStand : MonoBehaviour
     {
         if (isServingCustomer)
         {
-            if (customerServeStartTime != -1 && Time.time > customerServeStartTime + customerServingDuration)
+            //Debug.Log("Serving customer, start time: " +  customerServeStartTime);
+            if (customerServeStartTime != -1 && (Time.time >= (customerServeStartTime + customerServingDuration)))
             {
                 // finished serving customer, fire event
+                Debug.Log("Stand: Finished service");
                 OnFinishedServingCustomer?.Invoke(currentCustomer);
                 customerServeStartTime = -1;
             }
@@ -42,10 +44,13 @@ public abstract class AActivityStand : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log("Detected object");
         if (other.gameObject.CompareTag("NPC") || other.gameObject.CompareTag("Player"))
         {
+            Debug.Log("Detected NPC");
             currentCustomer = other.gameObject;
             isServingCustomer = true;
+            customerServeStartTime = Time.time;
         }
     }
 
