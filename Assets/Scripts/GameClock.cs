@@ -31,20 +31,20 @@ public class GameClock : MonoBehaviour
 
     public float GetRealWorldTime()
     {
-        // returns the world time in milliseconds, using real time for scale
+        // returns the world time in seconds, using real time for scale
         return Time.time - zeroTime;
     }
 
     public int GetGameWorldTimeHours()
     {
         // returns the world's hour time, where 1 game hour = 10 real minutes
-        return (int)(Mathf.Floor(GetRealWorldTime() / 600000) + startingHour);
+        return (int)(Mathf.Floor(GetRealWorldTime() / 600) + startingHour);
     }
 
     public int GameGameWorldTimeMinutes()
     {
         // returns the world's minute time, where 1 game minute = 10 real seconds
-        return (int)(GetRealWorldTime() / (1000 * 60)) * 10 % 60;
+        return (int)Time.time / 10;
     }
 
     public void ResetClock()
@@ -57,9 +57,9 @@ public class GameClock : MonoBehaviour
     {
         int realHours = hours - startingHour;
 
-        int realMS = realHours * 600000;
+        int realMS = realHours * 600;
 
-        realMS += minutes * 10000;
+        realMS += minutes * 10;
 
         return realMS;
     }
