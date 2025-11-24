@@ -17,8 +17,9 @@ public class ScheduledAgent : MonoBehaviour
 
     // true destination if the agent has to queue
     private Transform trueDestination;
+    private bool isInQueue = false;
     // reference to the stand instance if agent is going to a vendor
-    private AActivityStand targetVendor;
+    [SerializeField] private AActivityStand targetVendor;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -47,18 +48,19 @@ public class ScheduledAgent : MonoBehaviour
                 {
                     var potentialStand = agentSchedule[scheduleIndex].destinationTransform.parent.gameObject;
                     // transform is a child
-                    if (potentialStand.CompareTag("ActivityStand"))
+                    if (potentialStand.CompareTag("VenueStand"))
                     {
                         targetVendor = potentialStand.GetComponent<AActivityStand>();
                         // check the queue - are we in queueing distance and is the queue not full?
-                        if (!targetVendor.isQueueFull && targetVendor.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject))
+                        if (!targetVendor.isQueueFull && targetVendor.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject) && !isInQueue)
                         {
                             // change nav state to queueing, navigate to back of queue
                             navState = NavigationState.QUEUEING;
+                            isInQueue = true;
                             targetVendor.AddCustomerToQueue(gameObject);
                             npcNavMeshAgent.SetDestination(targetVendor.GetMemberQueuePosition(gameObject));
                         }
-                        else if (!targetVendor.IsCustomerInQueueingDistance(gameObject))
+                        else if (!targetVendor.IsCustomerInQueueingDistance(gameObject) && !isInQueue)
                         {
                             // navigate to the back of the queue
                             trueDestination = agentSchedule[scheduleIndex].destinationTransform;
@@ -66,8 +68,7 @@ public class ScheduledAgent : MonoBehaviour
                         }
                         else
                         {
-                            // queue is full, go do something else
-                            // TODO: add to this once map is added
+                            navState = NavigationState.WANDERING;
                         }
                     }
                 }
@@ -90,6 +91,7 @@ public class ScheduledAgent : MonoBehaviour
     {
         if (customer == gameObject)
         {
+            Debug.Log("Customer was served");
             // move to random position
             navState = NavigationState.WANDERING;
             targetVendor = null;
@@ -151,8 +153,18 @@ public class ScheduledAgent : MonoBehaviour
         // check if we are within the time needed threshold
         if (Time.time + (timeNeeded * 1000) >= agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime())
         {
+            Debug.Log("Moving to next item in schedule");
             scheduleIndex++;
             navState = NavigationState.NAVIGATING;
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("VenueStand"))
+        {
+            navState = NavigationState.AT_DEST;
+            isInQueue = false;
         }
     }
 }
