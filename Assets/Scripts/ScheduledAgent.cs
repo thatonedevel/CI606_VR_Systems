@@ -57,9 +57,13 @@ public class ScheduledAgent : MonoBehaviour
                         else
                         {
                             // queue is full, go do something else
+                            // TODO: add to this once map is added
                         }
                     }
                 }
+                break;
+
+            case NavigationState.QUEUEING:
                 break;
 
             default:
