@@ -2,6 +2,8 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
+// partial implementation for stand objects
+// TODO: add derivative classes for player interaction at stands
 public abstract class AActivityStand : MonoBehaviour
 {
     private List<GameObject> customerQueue = new List<GameObject>();

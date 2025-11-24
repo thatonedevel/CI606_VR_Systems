@@ -1,8 +1,12 @@
+using UnityEditorInternal;
 using UnityEngine;
+using System;
 
 public class GameClock : MonoBehaviour
 {
     public static GameClock Singleton;
+
+    public static event Action OnClockStarted;
 
     private float zeroTime = 0;
 
@@ -21,6 +25,7 @@ public class GameClock : MonoBehaviour
             Singleton = this;
             // set zero time
             zeroTime = Time.time;
+            OnClockStarted?.Invoke();
         }
     }
 
@@ -33,7 +38,7 @@ public class GameClock : MonoBehaviour
     public int GetGameWorldTimeHours()
     {
         // returns the world's hour time, where 1 game hour = 10 real minutes
-        return (int)(GetRealWorldTime() / (1000 * 60 * 60)) * 6 + startingHour;
+        return (int)(Mathf.Floor(GetRealWorldTime() / 600000) + startingHour);
     }
 
     public int GameGameWorldTimeMinutes()
@@ -45,15 +50,16 @@ public class GameClock : MonoBehaviour
     public void ResetClock()
     {
         zeroTime = Time.time;
+        OnClockStarted?.Invoke();
     }
 
     public float ConvertGameTimeToRealTime(int hours, int minutes=0)
     {
-        float realHours = hours - startingHour;
+        int realHours = hours - startingHour;
 
-        float realMS = realHours / (60 * 60) * 1000;
+        int realMS = realHours * 600000;
 
-        realMS += (minutes / 60f) * 10 * 1000;
+        realMS += minutes * 10000;
 
         return realMS;
     }
@@ -62,16 +68,46 @@ public class GameClock : MonoBehaviour
 [System.Serializable]
 public class GameTimeData
 {
-    public int hours;
-    public int minutes;
 
+    // internal values set from inspector
+    [SerializeField] private int hours;
+    [SerializeField] private int minutes;
 
     private float realTimeMS = 0;
 
-    public GameTimeData(int hours, int minutes=0)
+    public GameTimeData()
     {
-        this.hours = hours;
-        this.minutes = minutes;
+        GameClock.OnClockStarted += ClockStartListener;
+    }
+
+    public void ClockStartListener()
+    {
+        realTimeMS = GameClock.Singleton.ConvertGameTimeToRealTime(hours, minutes);
+    }
+
+    public float GetRealTime()
+    {
+        return realTimeMS;
+    }
+
+    public void SetTime(int newHours, int newMinutes)
+    {
+        hours = newHours; 
+        minutes = newMinutes;
+
+        realTimeMS = GameClock.Singleton.ConvertGameTimeToRealTime(hours, minutes);
+    }
+
+    public void SetHours(int newHours)
+    {
+        hours = newHours;
+
+        realTimeMS = GameClock.Singleton.ConvertGameTimeToRealTime(hours, minutes);
+    }
+
+    public void SetMinutes(int newMinutes)
+    {
+        minutes = newMinutes;
 
         realTimeMS = GameClock.Singleton.ConvertGameTimeToRealTime(hours, minutes);
     }
