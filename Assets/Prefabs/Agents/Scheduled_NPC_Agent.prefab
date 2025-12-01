@@ -275,7 +275,7 @@ NavMeshAgent:
   m_AutoRepath: 1
   m_Height: 2
   m_BaseOffset: 1
-  m_WalkableMask: 4294967295
+  m_WalkableMask: 13
   m_ObstacleAvoidanceType: 4
 --- !u!54 &427512479234844362
 Rigidbody:
@@ -345,3 +345,8 @@ MonoBehaviour:
   navState: 1
   distanceThreshold: 1
   timeConstant: 0
+  navigationLayerMasks:
+    serializedVersion: 2
+    m_Bits: 0
+  targetVendor: {fileID: 0}
+  printQueueInfo: 0
