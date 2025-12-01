@@ -74,32 +74,25 @@ public class ScheduledAgent : MonoBehaviour
                     if (potentialStand.CompareTag("VenueStand"))
                     {
                         targetVendor = potentialStand.GetComponent<AActivityStand>();
-                        // check the queue - are we in queueing distance and is the queue not full?
-                        if (!targetVendor.isQueueFull && targetVendor.GetComponent<AActivityStand>().IsCustomerInQueueingDistance(gameObject) && !isInQueue)
-                        {
-                            // change nav state to queueing, navigate to back of queue
-                            navState = NavigationState.QUEUEING;
-                            isInQueue = true;
-                            targetVendor.AddCustomerToQueue(gameObject);
-                            npcNavMeshAgent.SetDestination(targetVendor.GetMemberQueuePosition(gameObject));
-                        }
-                        else if (!targetVendor.IsCustomerInQueueingDistance(gameObject) && !isInQueue)
-                        {
-                            // navigate to the back of the queue
-                            if (printQueueInfo) 
-                                Debug.Log("AGENT " + name + " is  going to back of queue");
-                            trueDestination = agentSchedule[scheduleIndex].destinationTransform;
-                            npcNavMeshAgent.SetDestination(targetVendor.GetBackOfQueuePosition());
-                            Debug.DrawLine(transform.position, npcNavMeshAgent.destination);
-                        }
-                        else
+                        if (targetVendor is null)
                         {
                             navState = NavigationState.WANDERING;
+                        }
+                        // is the queue not full?
+                        if (!targetVendor.isQueueFull)
+                        {
+                            // start navigating to the back of the queue
+                            npcNavMeshAgent.SetDestination(targetVendor.GetBackOfQueuePosition());
+                            navState = NavigationState.GOING_TO_BACK_OF_QUEUE;
                         }
                     }
                 }
                 break;
 
+            case NavigationState.GOING_TO_BACK_OF_QUEUE:
+                // check back of queue position
+                NavigateToBackOfQueue();
+                break;
             case NavigationState.QUEUEING:
                 break;
 
@@ -137,6 +130,8 @@ public class ScheduledAgent : MonoBehaviour
             return;
         }
 
+        if (printQueueInfo)
+            Debug.Log("Moving forward in queue");
         Vector3 nextPos = targetVendor.GetMemberQueuePosition(gameObject);
         npcNavMeshAgent.SetDestination(nextPos);
     }
@@ -187,7 +182,7 @@ public class ScheduledAgent : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("VenueStand"))
+        if (other.gameObject.CompareTag("VenueStand") && navState == NavigationState.QUEUEING)
         {
             navState = NavigationState.AT_DEST;
             isInQueue = false;
@@ -247,6 +242,36 @@ public class ScheduledAgent : MonoBehaviour
                 addedRuntimeNavLayers.Remove(layerIndex);
         }      
     }
+
+    private void NavigateToBackOfQueue()
+    {
+        if (targetVendor is null)
+        {
+            navState = NavigationState.WANDERING;
+            return;
+        }
+
+        // is queue full?
+        if (targetVendor.isQueueFull)
+        {
+            navState = NavigationState.WANDERING;
+            return;
+        }
+
+        // check if we need to update dest (which happens if other agents join the queue first)
+        if (npcNavMeshAgent.destination != targetVendor.GetBackOfQueuePosition())
+        {
+            // update destination to back of queue
+            npcNavMeshAgent.SetDestination(targetVendor.GetBackOfQueuePosition());
+        }
+
+        // check distance to back of queue
+        if (Vector3.Distance(transform.position, targetVendor.GetBackOfQueuePosition()) <= npcNavMeshAgent.stoppingDistance)
+        {
+            // stop here and enter queue state
+            navState = NavigationState.QUEUEING;
+        }
+    }
 }
 
 [System.Serializable]
@@ -262,5 +287,6 @@ public enum NavigationState
     NAVIGATING,
     QUEUEING,
     WANDERING,
+    GOING_TO_BACK_OF_QUEUE,
     IDLE
 }

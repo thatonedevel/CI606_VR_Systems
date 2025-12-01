@@ -122,7 +122,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxQueueLength: 10
-  queueSpacing: 1.1
+  queueSpacing: 1.5
+  isServingCustomer: 0
   customerServingDuration: 5
 --- !u!1001 &5009033112821259240
 PrefabInstance:

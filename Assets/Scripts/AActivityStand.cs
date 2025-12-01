@@ -88,7 +88,7 @@ public class AActivityStand : MonoBehaviour
         // check if not at front of queue
         if (index != 0)
         {
-            newDestination = transform.GetChild(0).position + (transform.forward * -queueSpacing * index);
+            newDestination = transform.GetChild(0).position + (transform.forward * queueSpacing * index);
         }
         else
         {
@@ -106,6 +106,6 @@ public class AActivityStand : MonoBehaviour
 
     public Vector3 GetBackOfQueuePosition()
     {
-        return transform.GetChild(0).position + (transform.forward * -queueSpacing * customerQueue.Count);
+        return transform.GetChild(0).position + (transform.forward * queueSpacing * customerQueue.Count);
     }
 }
