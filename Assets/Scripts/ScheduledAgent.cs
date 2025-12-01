@@ -14,12 +14,15 @@ public class ScheduledAgent : MonoBehaviour
     [SerializeField] private NavigationState navState = NavigationState.WANDERING;
     [SerializeField] private float distanceThreshold = 1f;
     [SerializeField] private float timeConstant; // time constant, seconds
+    [SerializeField] private LayerMask navigationLayerMasks;
 
     // true destination if the agent has to queue
     private Transform trueDestination;
     private bool isInQueue = false;
     // reference to the stand instance if agent is going to a vendor
     [SerializeField] private AActivityStand targetVendor;
+
+    [SerializeField] private bool printQueueInfo = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -63,8 +66,10 @@ public class ScheduledAgent : MonoBehaviour
                         else if (!targetVendor.IsCustomerInQueueingDistance(gameObject) && !isInQueue)
                         {
                             // navigate to the back of the queue
+                            Debug.Log("AGENT " + name + " is  going to back of queue");
                             trueDestination = agentSchedule[scheduleIndex].destinationTransform;
                             npcNavMeshAgent.SetDestination(targetVendor.GetBackOfQueuePosition());
+                            Debug.DrawLine(transform.position, npcNavMeshAgent.destination);
                         }
                         else
                         {
@@ -166,6 +171,42 @@ public class ScheduledAgent : MonoBehaviour
             navState = NavigationState.AT_DEST;
             isInQueue = false;
         }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        // check if we hit an entry / exit trigger
+        if (other.CompareTag("EntryTrigger"))
+        {
+            RemoveLayerFromName("Entrance");
+            AddLayerFromName("Exit");
+            // recalc path with current dest.
+            npcNavMeshAgent.SetDestination(npcNavMeshAgent.destination);
+        }
+        else if (other.CompareTag("ExitTrigger"))
+        {
+            RemoveLayerFromName("Exit");
+            AddLayerFromName("Entrance");
+            // recalc path with current dest.
+            npcNavMeshAgent.SetDestination(npcNavMeshAgent.destination);
+        }
+    }
+
+    // helper functions to enable / disable masks
+    private void AddLayerFromName(string layerName)
+    {
+        // get layer index
+        int layerIndex = NavMesh.GetAreaFromName(layerName);
+
+        npcNavMeshAgent.areaMask += 1 << layerIndex; // take 1, shift to the left by the index amt of digits
+    }
+
+    private void RemoveLayerFromName(string layerName)
+    {
+        // get layer index
+        int layerIndex = NavMesh.GetAreaFromName(layerName);
+
+        npcNavMeshAgent.areaMask -= 1 << layerIndex;
     }
 }
 
