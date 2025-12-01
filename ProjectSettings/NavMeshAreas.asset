@@ -15,9 +15,9 @@ NavMeshProjectSettings:
     cost: 1
   - name: Exit
     cost: 1
-  - name: 
+  - name: Stairs
     cost: 1
-  - name: 
+  - name: Lifts
     cost: 1
   - name: 
     cost: 1
