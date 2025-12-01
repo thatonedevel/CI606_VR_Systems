@@ -14,7 +14,7 @@ public class AActivityStand : MonoBehaviour
     public float queueSpacing = 1.1f; // spacing between customers in the queue, public so it can be adjusted in inspector
 
     [Header("Debug / Queriable Data")]
-    [SerializeField] private bool isServingCustomer = false; // flag used to check if units in queue can move forward
+    public bool isServingCustomer { get; protected set; } = false; // flag used to check if units in queue can move forward
     public GameObject currentCustomer { get; protected set; } = null;
     public bool isQueueFull { get; protected set; } = false;
 
@@ -107,5 +107,10 @@ public class AActivityStand : MonoBehaviour
     public Vector3 GetBackOfQueuePosition()
     {
         return transform.GetChild(0).position + (transform.forward * queueSpacing * customerQueue.Count);
+    }
+
+    public int GetMemberPositionNumber(GameObject customer)
+    {
+        return customerQueue.IndexOf(customer);
     }
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
+using TreeEditor;
 
 public class ScheduledAgent : MonoBehaviour
 {
@@ -29,6 +30,10 @@ public class ScheduledAgent : MonoBehaviour
 
     private List<int> removedRuntimeNavLayers = new(); // list to track modifications to the layers to
     private List<int> addedRuntimeNavLayers = new(); // prevent the layer masks from getting fucked up
+
+    // queue movement stuff
+    private bool isMovingToPointInQueue = false;
+    private Vector3 pointInQueueToMoveTo = Vector3.zero;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -94,14 +99,16 @@ public class ScheduledAgent : MonoBehaviour
                 NavigateToBackOfQueue();
                 break;
             case NavigationState.QUEUEING:
+                CheckIfAtFrontOfQueue();
+                HandleAgentQueuing();
                 break;
-
             case NavigationState.WANDERING:
                 Wander();
                 break;
             default:
                 break;
         }
+        MoveToQueuePoint();
         CheckNextScheduleItem();
     }
 
@@ -270,6 +277,64 @@ public class ScheduledAgent : MonoBehaviour
         {
             // stop here and enter queue state
             navState = NavigationState.QUEUEING;
+            npcNavMeshAgent.isStopped = true;
+            npcNavMeshAgent.enabled = false; // disable navigation
+        }
+    }
+
+    private void HandleAgentQueuing()
+    {
+
+        // get position we need to move towards
+        if (targetVendor is null)
+        {
+            Debug.Log("Target vendor is not valid");
+            navState = NavigationState.WANDERING;
+            return;
+        }
+            
+        // set point to move to if not down as moving
+        if (!isMovingToPointInQueue)
+        {
+            // check point in queue we are going to
+            pointInQueueToMoveTo = targetVendor.GetMemberQueuePosition(gameObject);
+            isMovingToPointInQueue = true;
+        }
+    }
+
+    private void MoveToQueuePoint()
+    {
+        // get relative vector
+        Vector3 direction = (pointInQueueToMoveTo - transform.position).normalized * Time.deltaTime * npcNavMeshAgent.speed;
+
+        // check if we overshoot
+        if (Vector3.Distance(pointInQueueToMoveTo, transform.position) <= direction.magnitude)
+        {
+            // snap to point
+            transform.position = pointInQueueToMoveTo;
+            isMovingToPointInQueue = false;
+        }
+        else
+        {
+            transform.Translate(transform.position);
+        }
+    }
+
+    private void CheckIfAtFrontOfQueue()
+    {
+        int position = targetVendor.GetMemberPositionNumber(gameObject);
+
+        if (position == 0)
+        {
+            // is the vendor empty?
+            if (!targetVendor.isServingCustomer)
+            {
+                // move to the true position
+                // also re-enable nav
+                npcNavMeshAgent.isStopped = false;
+                npcNavMeshAgent.enabled = true;
+                npcNavMeshAgent.SetDestination(trueDestination.position);
+            }
         }
     }
 }
