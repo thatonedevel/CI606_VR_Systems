@@ -106,6 +106,6 @@ public class AActivityStand : MonoBehaviour
 
     public Vector3 GetBackOfQueuePosition()
     {
-        return transform.GetChild(0).position + (transform.forward * -queueSpacing * maxQueueLength);
+        return transform.GetChild(0).position + (transform.forward * -queueSpacing * customerQueue.Count);
     }
 }
