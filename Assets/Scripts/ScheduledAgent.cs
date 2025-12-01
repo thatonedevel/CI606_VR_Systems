@@ -14,7 +14,6 @@ public class ScheduledAgent : MonoBehaviour
     [SerializeField] private NavigationState navState = NavigationState.WANDERING;
     [SerializeField] private float distanceThreshold = 1f;
     [SerializeField] private float timeConstant; // time constant, seconds
-    [SerializeField] private LayerMask navigationLayerMasks;
 
     // true destination if the agent has to queue
     private Transform trueDestination;
@@ -23,6 +22,13 @@ public class ScheduledAgent : MonoBehaviour
     [SerializeField] private AActivityStand targetVendor;
 
     [SerializeField] private bool printQueueInfo = false;
+
+    [Header("Layer Settings")]
+    [SerializeField] private List<string> layersToEnableOnStart = new List<string>();
+    [SerializeField] private List<string> layersToDisableOnStart = new List<string>();
+
+    private List<int> removedRuntimeNavLayers = new(); // list to track modifications to the layers to
+    private List<int> addedRuntimeNavLayers = new(); // prevent the layer masks from getting fucked up
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -35,6 +41,20 @@ public class ScheduledAgent : MonoBehaviour
         // subscribe to events
         AActivityStand.OnCustomerLeftStand += MoveInQueueListener;
         AActivityStand.OnFinishedServingCustomer += FinishedAtStandListener;
+
+        // go through the layer lists and enable / disable the specified layers
+
+        for (int i = 0; i < layersToDisableOnStart.Count; i++) 
+        {
+            npcNavMeshAgent.areaMask -= 1 << NavMesh.GetAreaFromName(layersToDisableOnStart[i]);
+            removedRuntimeNavLayers.Add(NavMesh.GetAreaFromName(layersToDisableOnStart[i]));
+        }
+
+        for (int i = 0; i < layersToEnableOnStart.Count; i++)
+        {
+            npcNavMeshAgent.areaMask += 1 << NavMesh.GetAreaFromName(layersToEnableOnStart[i]);
+            addedRuntimeNavLayers.Add(NavMesh.GetAreaFromName(layersToEnableOnStart[i]));
+        }
     }
 
     // Update is called once per frame
@@ -66,7 +86,8 @@ public class ScheduledAgent : MonoBehaviour
                         else if (!targetVendor.IsCustomerInQueueingDistance(gameObject) && !isInQueue)
                         {
                             // navigate to the back of the queue
-                            Debug.Log("AGENT " + name + " is  going to back of queue");
+                            if (printQueueInfo) 
+                                Debug.Log("AGENT " + name + " is  going to back of queue");
                             trueDestination = agentSchedule[scheduleIndex].destinationTransform;
                             npcNavMeshAgent.SetDestination(targetVendor.GetBackOfQueuePosition());
                             Debug.DrawLine(transform.position, npcNavMeshAgent.destination);
@@ -178,6 +199,7 @@ public class ScheduledAgent : MonoBehaviour
         // check if we hit an entry / exit trigger
         if (other.CompareTag("EntryTrigger"))
         {
+            Debug.Log("Left entry trigger");
             RemoveLayerFromName("Entrance");
             AddLayerFromName("Exit");
             // recalc path with current dest.
@@ -185,6 +207,7 @@ public class ScheduledAgent : MonoBehaviour
         }
         else if (other.CompareTag("ExitTrigger"))
         {
+            Debug.Log("Left exit trigger");
             RemoveLayerFromName("Exit");
             AddLayerFromName("Entrance");
             // recalc path with current dest.
@@ -197,8 +220,16 @@ public class ScheduledAgent : MonoBehaviour
     {
         // get layer index
         int layerIndex = NavMesh.GetAreaFromName(layerName);
-
-        npcNavMeshAgent.areaMask += 1 << layerIndex; // take 1, shift to the left by the index amt of digits
+        // check if we haven't already added it
+        if (!addedRuntimeNavLayers.Contains(layerIndex))
+        {
+            npcNavMeshAgent.areaMask += 1 << layerIndex; // take 1, shift to the left by the index amt of digits (radiantboy, 2021)
+            // add to added runtime layers
+            addedRuntimeNavLayers.Add(layerIndex);
+            // if it exists in the removed list, remove it from there
+            if (removedRuntimeNavLayers.Contains(layerIndex))
+                removedRuntimeNavLayers.Remove(layerIndex);
+        }
     }
 
     private void RemoveLayerFromName(string layerName)
@@ -206,7 +237,15 @@ public class ScheduledAgent : MonoBehaviour
         // get layer index
         int layerIndex = NavMesh.GetAreaFromName(layerName);
 
-        npcNavMeshAgent.areaMask -= 1 << layerIndex;
+        if (!removedRuntimeNavLayers.Contains(layerIndex))
+        {
+            npcNavMeshAgent.areaMask -= 1 << layerIndex; // take 1 shift to left by index amount (radiantboy, 2021 https://discussions.unity.com/t/area-mask-nav-mesh-agent-changing-by-code/783157/3)
+            removedRuntimeNavLayers.Add(layerIndex);
+
+            // if it exists in the other list, remove it from there
+            if (addedRuntimeNavLayers.Contains(layerIndex))
+                addedRuntimeNavLayers.Remove(layerIndex);
+        }      
     }
 }
 
