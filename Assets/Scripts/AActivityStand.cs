@@ -113,4 +113,9 @@ public class AActivityStand : MonoBehaviour
     {
         return customerQueue.IndexOf(customer);
     }
+
+    public int GetQueueSize()
+    {
+        return customerQueue.Count;
+    }
 }
