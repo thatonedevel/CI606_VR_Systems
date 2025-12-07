@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.AI;
 
 // partial implementation for stand objects
 // TODO: add derivative classes for player interaction at stands
@@ -123,9 +124,9 @@ public class AActivityStand : MonoBehaviour
         return ExitPosition.position;
     }
 
-    public virtual void GetServingPosition()
+    public virtual Vector3 GetServingPosition()
     {
-
+        return transform.GetChild(0).position;
     }
 
     public int GetQueueSize()
@@ -133,5 +134,27 @@ public class AActivityStand : MonoBehaviour
         return customerQueue.Count;
     }
 
+    public bool CanAgentMoveToQueuePos(GameObject agent)
+    {
+        // check agent is in the queue
+        if (!customerQueue.Contains(agent))
+            return false;
 
+        // are they at position 0?
+        int agentPos = customerQueue.IndexOf(agent);
+
+        if (agentPos == 0)
+        {
+            // at front of queue
+            return false;
+        }
+        else
+        {
+            // not at front of queue
+            // get destination
+            Vector3 dest = GetMemberQueuePosition(agent);
+            // check if it's navigable
+            return agent.GetComponent<NavMeshAgent>().CalculatePath(dest, new NavMeshPath());
+        }
+    }
 }
