@@ -170,10 +170,10 @@ public class ScheduledAgent : MonoBehaviour
         }
     }
 
-    private void CheckNextScheduleItem()
+    private bool CheckNextScheduleItem()
     {
         if (scheduleIndex + 1 >= agentSchedule.Count)
-            return;
+            return false;
 
         /* check if we need to go to our next destination
          * takes priority over other logic
@@ -187,7 +187,10 @@ public class ScheduledAgent : MonoBehaviour
             Debug.Log("Moving to next item in schedule");
             scheduleIndex++;
             navState = NavigationState.NAVIGATING;
+            return true;
         }
+
+        return false;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -324,6 +327,8 @@ public class ScheduledAgent : MonoBehaviour
             if (targetVendor.servingCount > targetVendor.servingCapacity)
             {
                 // tell the agent to navigate to the serving spot
+                if (!NavigateToLocation(targetVendor.GetServingPosition()))
+                    runSelectorBranch2 = true;
             }
             else
             {
@@ -335,7 +340,54 @@ public class ScheduledAgent : MonoBehaviour
             runSelectorBranch2 = true;
         }
 
-        return true;
+        // check if we need to run the second stage of the selector branch
+        if (runSelectorBranch2)
+        {
+            // check if the queue space ahead is empty
+            if (!targetVendor.CanAgentMoveToQueuePos(gameObject))
+                return false;
+
+            // navigate to queue pos
+            return NavigateToLocation(targetVendor.GetMemberQueuePosition(gameObject));
+        }
+
+        return false;
+    }
+
+    // subtree for updating schedule
+    private bool ScheduleCheckSubtree()
+    {
+        // check if we're currently moving to a scheduled location
+        if (CheckScheduleForLocation(npcNavMeshAgent.destination))
+            return false; // already moving to schedule pos
+
+        if (!CheckNextScheduleItem())
+            return false;
+
+        return NavigateToLocation(agentSchedule[scheduleIndex].destinationTransform.position);
+    }
+
+    // subtree for checking if we need to join a queue
+    private bool QueueCheckSubtree()
+    {
+        return false;
+    }
+
+    private bool CheckScheduleForLocation(Vector3 pos)
+    {
+        // check if the position is in the schedule
+        bool found = false;
+
+        for (int i = 0; i < agentSchedule.Count; i++)
+        {
+            if (agentSchedule[i].destinationTransform.position == pos)
+            {
+                found = true;
+                break;
+            }
+        }
+
+        return found;
     }
 }
 
