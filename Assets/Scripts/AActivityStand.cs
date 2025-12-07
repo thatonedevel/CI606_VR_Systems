@@ -7,11 +7,14 @@ using System.Collections.Generic;
 public class AActivityStand : MonoBehaviour
 {
     private List<GameObject> customerQueue = new List<GameObject>();
-    
+
 
     [Header("Queue Settings")]
     public int maxQueueLength = 10; // maximum number of customers allowed in the queue
     public float queueSpacing = 1.1f; // spacing between customers in the queue, public so it can be adjusted in inspector
+    public int servingCapacity = 1;
+
+    public int servingCount { get; protected set; } = 1;
 
     [Header("Debug / Queriable Data")]
     public bool isServingCustomer { get; protected set; } = false; // flag used to check if units in queue can move forward
@@ -25,6 +28,7 @@ public class AActivityStand : MonoBehaviour
     // customer timing
     private float customerServeStartTime = -1f;
     [SerializeField] private float customerServingDuration = 5f;
+    [SerializeField] private Transform ExitPosition;
     // bo
 
     private void Update()
@@ -74,7 +78,7 @@ public class AActivityStand : MonoBehaviour
         if (!customerQueue.Contains(customer))
         {
             customerQueue.Add(customer);
-            
+
             isQueueFull = customerQueue.Count == maxQueueLength;
         }
     }
@@ -114,8 +118,20 @@ public class AActivityStand : MonoBehaviour
         return customerQueue.IndexOf(customer);
     }
 
+    public Vector3 GetLocationExit()
+    {
+        return ExitPosition.position;
+    }
+
+    public virtual void GetServingPosition()
+    {
+
+    }
+
     public int GetQueueSize()
     {
         return customerQueue.Count;
     }
+
+
 }
