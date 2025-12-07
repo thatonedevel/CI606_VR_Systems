@@ -3,6 +3,7 @@ using UnityEngine.AI;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
 using TreeEditor;
+using Unity.VisualScripting;
 
 public class ScheduledAgent : MonoBehaviour
 {
@@ -34,6 +35,11 @@ public class ScheduledAgent : MonoBehaviour
     // queue movement stuff
     private bool isMovingToPointInQueue = false;
     private Vector3 pointInQueueToMoveTo = Vector3.zero;
+
+
+    // flags used for the behaviour tree
+    private bool finishedAtStand = false;
+    private bool isMoving = true;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -117,10 +123,7 @@ public class ScheduledAgent : MonoBehaviour
     {
         if (customer == gameObject)
         {
-            Debug.Log("Customer was served");
-            // move to random position
-            navState = NavigationState.WANDERING;
-            targetVendor = null;
+            // set the flag to leave the current stand
         }
     }
 
@@ -254,6 +257,85 @@ public class ScheduledAgent : MonoBehaviour
     {
         bool hasToQueue = targetVendor.isServingCustomer || targetVendor.GetQueueSize() > 0;
         return hasToQueue;
+    }
+
+    // subtree no1
+    private bool AtCustomerServiceSubtree()
+    {
+        // check if we're being served
+        if (targetVendor is null)
+            return false;
+
+        if (targetVendor.isServingCustomer)
+            if (targetVendor.currentCustomer != gameObject)
+                return false;
+
+        // duration check - have we been at the location long enough
+        if (finishedAtStand)
+            // go to exit
+            return NavigateToExit();
+
+        return false;
+    }
+
+
+    private bool NavigateToExit()
+    {
+        // get target vendor's location
+        if (targetVendor is null)
+            return false;
+
+        var pos = targetVendor.GetLocationExit();
+
+        return NavigateToLocation(pos);
+    }
+
+    private bool NavigateToLocation(Vector3 destination)
+    {
+        bool canNav = npcNavMeshAgent.SetDestination(destination);
+        if (canNav)
+        {
+            isMoving = true;
+            return true;
+        }
+        else
+        {
+            isMoving = false;
+            return false;
+        }
+    }
+
+    // subtree no2
+    private bool QueueSubtree()
+    {
+        bool runSelectorBranch2 = false;
+
+        if (targetVendor is null)
+            return false;
+
+        // check we're in a queue
+        if (!isInQueue)
+            return false;
+
+        // check queue position
+        if (targetVendor.GetMemberPositionNumber(gameObject) == 0)
+        {
+            // check there is space for the customer
+            if (targetVendor.servingCount > targetVendor.servingCapacity)
+            {
+                // tell the agent to navigate to the serving spot
+            }
+            else
+            {
+                runSelectorBranch2 = true;
+            }
+        }
+        else
+        {
+            runSelectorBranch2 = true;
+        }
+
+        return true;
     }
 }
 
