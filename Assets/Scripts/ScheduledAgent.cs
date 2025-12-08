@@ -16,6 +16,7 @@ public class ScheduledAgent : MonoBehaviour
     [SerializeField] private NavigationState navState = NavigationState.WANDERING;
     [SerializeField] private float distanceThreshold = 1f;
     [SerializeField] private float timeConstant; // time constant, seconds
+    [SerializeField][Tooltip("Maximum Radius to use when choosing a random destination")] private float wanderRadius = 10f;
 
     // true destination if the agent has to queue
     private Transform trueDestination;
@@ -44,6 +45,9 @@ public class ScheduledAgent : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        // make sure radius is a positive value
+        wanderRadius = Mathf.Abs(wanderRadius);
+
         if (npcNavMeshAgent is null)
         {
             npcNavMeshAgent = GetComponent<NavMeshAgent>();
@@ -146,28 +150,19 @@ public class ScheduledAgent : MonoBehaviour
         npcNavMeshAgent.SetDestination(nextPos);
     }
 
-    private void Wander()
+    private bool Wander()
     {
         // wondering - move to a location, pick a random direction, then move
-        npcNavMeshAgent.enabled = true;
 
-        // check distance to target
-        if (npcNavMeshAgent.remainingDistance <= distanceThreshold)
-        {
-            // at target, pick random direction
-            int randomX = Random.Range(-10, 10);
-            int randomZ = Random.Range(-10, 10);
-            Vector3 randomDirection = new Vector3(randomX, 0, randomZ);
+        // use radius of 10m
+        Vector3 randomDest = transform.position + new Vector3(Random.Range(-wanderRadius, wanderRadius), transform.position.y, Random.Range(-wanderRadius, wanderRadius));
 
-            // check if random direction is valid on navmesh
-            var dest = transform.position + randomDirection;
+        // is it navigable?
+        if (!npcNavMeshAgent.CalculatePath(randomDest, new NavMeshPath()))
+            return false;
 
-            if (npcNavMeshAgent.CalculatePath(dest, new NavMeshPath()))
-            {
-                // it's a valid path
-                npcNavMeshAgent.SetDestination(dest);
-            }
-        }
+        // it is navigable, go to the point
+        return NavigateToLocation(randomDest);
     }
 
     private bool CheckNextScheduleItem()
@@ -254,12 +249,6 @@ public class ScheduledAgent : MonoBehaviour
             if (addedRuntimeNavLayers.Contains(layerIndex))
                 addedRuntimeNavLayers.Remove(layerIndex);
         }      
-    }
-
-    private bool CheckIfNeedsToQueue()
-    {
-        bool hasToQueue = targetVendor.isServingCustomer || targetVendor.GetQueueSize() > 0;
-        return hasToQueue;
     }
 
     // subtree no1
@@ -370,8 +359,40 @@ public class ScheduledAgent : MonoBehaviour
     // subtree for checking if we need to join a queue
     private bool QueueCheckSubtree()
     {
-        return false;
+        // check distance to schedule dest
+        NavMeshPath path = new NavMeshPath();
+        npcNavMeshAgent.CalculatePath(agentSchedule[scheduleIndex].destinationTransform.position, path);
+
+        float distance = CalculatePathLength(path);
+
+        // check if the distance to the 
+        if (targetVendor is null)
+            return false;
+
+        if (!targetVendor.IsCustomerInQueueingDistance(distance))
+            return false;
+
+        // check that queue has space
+        if (targetVendor.isQueueFull)
+            return false;
+
+        // navigate to back of queue
+        // reserve the space and navigate to back
+        targetVendor.AddCustomerToQueue(gameObject);
+
+        return NavigateToLocation(agentSchedule[scheduleIndex].destinationTransform.position);
     }
+
+    // schedule end check subtree
+    private bool CheckIfAtEndOfSchedule()
+    {
+        if (scheduleIndex < agentSchedule.Count)
+            return false;
+
+        // TODO: IMPLEMENT EXIT LOCATION
+        return NavigateToLocation(FindNearestExit());
+    }
+
 
     private bool CheckScheduleForLocation(Vector3 pos)
     {
@@ -388,6 +409,38 @@ public class ScheduledAgent : MonoBehaviour
         }
 
         return found;
+    }
+
+    private float CalculatePathLength(NavMeshPath path)
+    {
+        float totalLength = 0;
+        // loop through each waypoint and calculate the distance from the relative vectors
+        for (int i = 0; i < path.corners.Length; i++)
+        {
+            // check path corners are above a specific amount
+            if (path.corners.Length < 1)
+                return Vector3.Distance(transform.position, path.corners[0]);
+
+            if (i == 0)
+            {
+                // first waypoint - calculate distance as between this and current location
+                totalLength += Vector3.Distance(path.corners[i], transform.position);
+            }
+            else
+            {
+                // part way through the path
+                totalLength += Vector3.Distance(path.corners[i], path.corners[i - 1]);
+            }
+        }
+
+        return totalLength;
+    }
+
+    private Vector3 FindNearestExit()
+    {
+        // TODO: PROPER IMPLEMENTATION
+        Vector3 nearestExit = Vector3.zero;
+        return nearestExit;
     }
 }
 
