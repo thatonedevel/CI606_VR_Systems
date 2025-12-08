@@ -54,7 +54,7 @@ public class ScheduledAgent : MonoBehaviour
         }
 
         // subscribe to events
-        AActivityStand.OnCustomerLeftStand += MoveInQueueListener;
+        //AActivityStand.OnCustomerLeftStand += MoveInQueueListener;
         AActivityStand.OnFinishedServingCustomer += FinishedAtStandListener;
 
         // go through the layer lists and enable / disable the specified layers
@@ -133,7 +133,7 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("AGENT " + name + " Running subtree: Receiving customer service");
             nodeCompletedSuccessfully = AtCustomerServiceSubtree();
-            Debug.Log("AGENT" + name + " completed subtree: Receiving customer service with success status: " + nodeCompletedSuccessfully);
+            Debug.Log("AGENT " + name + " completed subtree: Receiving customer service with success status: " + nodeCompletedSuccessfully);
         }
 
         if (!nodeCompletedSuccessfully)
@@ -148,7 +148,7 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("AGENT " + name + " Running subtree: Checking schedule for destination update");
             nodeCompletedSuccessfully = ScheduleCheckSubtree();
-            Debug.Log("AGENT" + name + " completed subtree: Checking schedule for destination update with success status: " + nodeCompletedSuccessfully);
+            Debug.Log("AGENT " + name + " completed subtree: Checking schedule for destination update with success status: " + nodeCompletedSuccessfully);
         }
             
 
@@ -156,7 +156,7 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("AGENT " + name + " Running subtree: Checking to join queue");
             nodeCompletedSuccessfully = QueueCheckSubtree();
-            Debug.Log("AGENT" + name + " completed subtree: Checking to join queue with success status: " + nodeCompletedSuccessfully);
+            Debug.Log("AGENT " + name + " completed subtree: Checking to join queue with success status: " + nodeCompletedSuccessfully);
         }
             
 
@@ -164,7 +164,7 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("AGENT " + name + " Running subtree: Checking for schedule end");
             nodeCompletedSuccessfully = CheckIfAtEndOfSchedule();
-            Debug.Log("AGENT" + name + " completed subtree: Checking for schedule end with success status: " + nodeCompletedSuccessfully);
+            Debug.Log("AGENT " + name + " completed subtree: Checking for schedule end with success status: " + nodeCompletedSuccessfully);
         }
             
 
@@ -172,7 +172,7 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("AGENT " + name + " Running subtree: Wander");
             nodeCompletedSuccessfully = Wander();
-            Debug.Log("AGENT" + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
+            Debug.Log("AGENT " + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
         }
             
     }
