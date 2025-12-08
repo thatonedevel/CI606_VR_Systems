@@ -256,33 +256,24 @@ public class ScheduledAgent : MonoBehaviour
         return false;
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.CompareTag("VenueStand") && navState == NavigationState.QUEUEING)
-        {
-            navState = NavigationState.AT_DEST;
-            isInQueue = false;
-        }
-    }
-
     private void OnTriggerExit(Collider other)
     {
         // check if we hit an entry / exit trigger
         if (other.CompareTag("EntryTrigger"))
         {
-            Debug.Log("Left entry trigger");
+            //Debug.Log("Left entry trigger");
             RemoveLayerFromName("Entrance");
             AddLayerFromName("Exit");
             // recalc path with current dest.
-            npcNavMeshAgent.SetDestination(npcNavMeshAgent.destination);
+            NavigateToLocation(npcNavMeshAgent.destination);
         }
         else if (other.CompareTag("ExitTrigger"))
         {
-            Debug.Log("Left exit trigger");
+            //Debug.Log("Left exit trigger");
             RemoveLayerFromName("Exit");
             AddLayerFromName("Entrance");
             // recalc path with current dest.
-            npcNavMeshAgent.SetDestination(npcNavMeshAgent.destination);
+            NavigateToLocation(npcNavMeshAgent.destination);
         }
     }
 

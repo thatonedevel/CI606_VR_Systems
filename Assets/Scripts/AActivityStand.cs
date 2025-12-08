@@ -55,6 +55,7 @@ public class AActivityStand : MonoBehaviour
             Debug.Log("Detected NPC");
             currentCustomer = other.gameObject;
             isServingCustomer = true;
+            servingCount++;
             customerServeStartTime = Time.time;
         }
     }
@@ -66,6 +67,7 @@ public class AActivityStand : MonoBehaviour
             customerQueue.Remove(other.gameObject);
             currentCustomer = null;
             isServingCustomer = false;
+            servingCount--;
 
             // check if queue has space
             isQueueFull = customerQueue.Count < maxQueueLength;
