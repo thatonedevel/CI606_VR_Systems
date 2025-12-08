@@ -3,7 +3,7 @@ using UnityEngine.AI;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
 using TreeEditor;
-using Unity.VisualScripting;
+using UnityEngine.Events;
 
 public class ScheduledAgent : MonoBehaviour
 {
@@ -75,7 +75,7 @@ public class ScheduledAgent : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        switch (navState)
+        /*switch (navState)
         {
             case NavigationState.AT_DEST:
                 break;
@@ -119,8 +119,65 @@ public class ScheduledAgent : MonoBehaviour
                 break;
         }
         //MoveToQueuePoint();
-        CheckNextScheduleItem();
+        CheckNextScheduleItem();*/
+
+        // cycle through the subtrees
+        // use this to check success from the executed subtree
+        bool nodeCompletedSuccessfully = false;
+
+        // this looks super ugly but its what we have to do lol
+        nodeCompletedSuccessfully = UpdateMovementStatus();
+
+        // rest run under if statement checks
+        if (!nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Receiving customer service");
+            nodeCompletedSuccessfully = AtCustomerServiceSubtree();
+            Debug.Log("AGENT" + name + " completed subtree: Receiving customer service with success status: " + nodeCompletedSuccessfully);
+        }
+
+        if (!nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Queueing");
+            nodeCompletedSuccessfully = QueueSubtree();
+            Debug.Log("AGENT" + name + " completed subtree: Queuing with success status: " + nodeCompletedSuccessfully);
+        }
+            
+
+        if (!nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Checking schedule for destination update");
+            nodeCompletedSuccessfully = ScheduleCheckSubtree();
+            Debug.Log("AGENT" + name + " completed subtree: Checking schedule for destination update with success status: " + nodeCompletedSuccessfully);
+        }
+            
+
+        if (!nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Checking to join queue");
+            nodeCompletedSuccessfully = QueueCheckSubtree();
+            Debug.Log("AGENT" + name + " completed subtree: Checking to join queue with success status: " + nodeCompletedSuccessfully);
+        }
+            
+
+        if (!nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Checking for schedule end");
+            nodeCompletedSuccessfully = CheckIfAtEndOfSchedule();
+            Debug.Log("AGENT" + name + " completed subtree: Checking for schedule end with success status: " + nodeCompletedSuccessfully);
+        }
+            
+
+        if (!nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Wander");
+            nodeCompletedSuccessfully = Wander();
+            Debug.Log("AGENT" + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
+        }
+            
     }
+
+
 
     // listener for finished being served
     public void FinishedAtStandListener(GameObject customer)
@@ -182,6 +239,17 @@ public class ScheduledAgent : MonoBehaviour
             Debug.Log("Moving to next item in schedule");
             scheduleIndex++;
             navState = NavigationState.NAVIGATING;
+
+            // check if the transform is the child of an activity stand
+            if (agentSchedule[scheduleIndex].destinationTransform.CompareTag("ServiceTransform"))
+            {
+                targetVendor = agentSchedule[scheduleIndex].destinationTransform.parent.GetComponent<AActivityStand>();
+            }
+            else
+            {
+                targetVendor = null;
+            }
+
             return true;
         }
 
@@ -393,7 +461,6 @@ public class ScheduledAgent : MonoBehaviour
         return NavigateToLocation(FindNearestExit());
     }
 
-
     private bool CheckScheduleForLocation(Vector3 pos)
     {
         // check if the position is in the schedule
@@ -441,6 +508,23 @@ public class ScheduledAgent : MonoBehaviour
         // TODO: PROPER IMPLEMENTATION
         Vector3 nearestExit = Vector3.zero;
         return nearestExit;
+    }
+
+    private bool UpdateMovementStatus()
+    {
+        if (isMoving)
+        {
+            // check in range to currrent destination
+            if (Vector3.Distance(transform.position, npcNavMeshAgent.destination) <= distanceThreshold)
+            {
+                isMoving = false;
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }
 
