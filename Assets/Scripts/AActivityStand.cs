@@ -109,6 +109,12 @@ public class AActivityStand : MonoBehaviour
         return Vector3.Distance(customer.transform.position, transform.GetChild(0).position) <= maxDist;
     }
 
+    public bool IsCustomerInQueueingDistance(float distance)
+    {
+        // override
+        return distance <= queueSpacing * (maxQueueLength + 1);
+    }
+
     public Vector3 GetBackOfQueuePosition()
     {
         return transform.GetChild(0).position + (transform.forward * queueSpacing * customerQueue.Count);
