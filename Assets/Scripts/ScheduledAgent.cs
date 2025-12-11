@@ -41,6 +41,7 @@ public class ScheduledAgent : MonoBehaviour
     // flags used for the behaviour tree
     private bool finishedAtStand = false;
     private bool isMoving = true;
+    private bool homeTime = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -136,6 +137,8 @@ public class ScheduledAgent : MonoBehaviour
             Debug.Log("AGENT " + name + " completed subtree: Receiving customer service with success status: " + nodeCompletedSuccessfully);
         }
 
+        // selector branch set
+
         if (!nodeCompletedSuccessfully)
         {
             Debug.Log("AGENT " + name + " Running subtree: Queueing");
@@ -225,7 +228,14 @@ public class ScheduledAgent : MonoBehaviour
     private bool CheckNextScheduleItem()
     {
         if (scheduleIndex + 1 >= agentSchedule.Count)
-            return false;
+        {
+            // at end of schedule, go home
+            homeTime = true;
+            // set destination to venue exit
+            
+            NavigateToLocation(FindNearestExit());
+            return true;
+        }
 
         /* check if we need to go to our next destination
          * takes priority over other logic
@@ -347,11 +357,13 @@ public class ScheduledAgent : MonoBehaviour
         if (canNav)
         {
             isMoving = true;
+            npcNavMeshAgent.isStopped = false;
             return true;
         }
         else
         {
             isMoving = false;
+            npcNavMeshAgent.isStopped = true;
             return false;
         }
     }
@@ -393,9 +405,16 @@ public class ScheduledAgent : MonoBehaviour
         {
             // check if the queue space ahead is empty
             if (!targetVendor.CanAgentMoveToQueuePos(gameObject))
+            {
+                npcNavMeshAgent.isStopped = true;
                 return false;
+            }
 
             // navigate to queue pos
+            npcNavMeshAgent.isStopped = false;
+            isInQueue = false;
+            // remove self from queue
+            targetVendor.RemoveMemberFromQueue(gameObject);
             return NavigateToLocation(targetVendor.GetMemberQueuePosition(gameObject));
         }
 
@@ -438,6 +457,7 @@ public class ScheduledAgent : MonoBehaviour
         // navigate to back of queue
         // reserve the space and navigate to back
         targetVendor.AddCustomerToQueue(gameObject);
+        isInQueue = true;
 
         return NavigateToLocation(agentSchedule[scheduleIndex].destinationTransform.position);
     }
