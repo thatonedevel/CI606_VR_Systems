@@ -52,7 +52,7 @@ public class AActivityStand : MonoBehaviour
         Debug.Log("Detected object");
         if (other.gameObject.CompareTag("NPC") || other.gameObject.CompareTag("Player"))
         {
-            Debug.Log("Detected NPC");
+            Debug.Log("Seving NPC");
             currentCustomer = other.gameObject;
             isServingCustomer = true;
             servingCount++;
@@ -161,8 +161,32 @@ public class AActivityStand : MonoBehaviour
             // not at front of queue
             // get destination
             Vector3 dest = GetMemberQueuePosition(agent);
+
             // check if it's navigable
-            return agent.GetComponent<NavMeshAgent>().CalculatePath(dest, new NavMeshPath());
+            // use a raycast from agent position to queue position to check
+            // calculate length of relative vector between points
+            RaycastHit[] hits = { };
+            
+            Vector3 rcDirection = new Vector3(dest.x - agent.transform.position.x,
+                agent.transform.position.y, dest.z - agent.transform.position.y);
+
+            Physics.RaycastNonAlloc(agent.transform.position, rcDirection.normalized, hits, rcDirection.magnitude);
+
+            // loop through the hit data, check if we hit an agent or player
+            for (int hitIndex = 0; hitIndex < hits.Length; hitIndex++)
+            {
+                if (hits[hitIndex].collider.CompareTag("NPC") || hits[hitIndex].collider.CompareTag("Player"))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
+    }
+
+    public bool RemoveMemberFromQueue(GameObject member)
+    {
+        return customerQueue.Remove(member);
     }
 }
