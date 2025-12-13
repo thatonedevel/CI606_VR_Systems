@@ -452,6 +452,10 @@ public class ScheduledAgent : MonoBehaviour
     // subtree for checking if we need to join a queue
     private bool QueueCheckSubtree()
     {
+        // fail if we're already in a queue
+        if (isInQueue)
+            return false;
+
         // check distance to schedule dest
         NavMeshPath path = new NavMeshPath();
         npcNavMeshAgent.CalculatePath(agentSchedule[scheduleIndex].destinationTransform.position, path);
