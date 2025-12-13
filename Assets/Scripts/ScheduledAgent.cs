@@ -173,15 +173,15 @@ public class ScheduledAgent : MonoBehaviour
             //    Debug.Log("AGENT " + name + " completed subtree: Checking for schedule end with success status: " + nodeCompletedSuccessfully);
             //}
             
-            if (!nodeCompletedSuccessfully)
-            {
-                Debug.Log("AGENT " + name + " Running subtree: Wander");
-                nodeCompletedSuccessfully = Wander();
-                Debug.Log("AGENT " + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
-            }
+            
         }    
 
-        
+        if (!nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Wander");
+            nodeCompletedSuccessfully = Wander();
+            Debug.Log("AGENT " + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
+        }
             
     }
 
@@ -220,16 +220,15 @@ public class ScheduledAgent : MonoBehaviour
 
     private bool Wander()
     {
+        // queue check bc i messed up the behaviour tree and im a bit lazy to fix it
+        if (isInQueue)
+            return false;
+
         // wondering - move to a location, pick a random direction, then move
 
         // use radius of 10m
         Vector3 randomDest = transform.position + new Vector3(Random.Range(-wanderRadius, wanderRadius), transform.position.y, Random.Range(-wanderRadius, wanderRadius));
 
-        // is it navigable?
-        if (!npcNavMeshAgent.CalculatePath(randomDest, new NavMeshPath()))
-            return false;
-
-        // it is navigable, go to the point
         return NavigateToLocation(randomDest);
     }
 
