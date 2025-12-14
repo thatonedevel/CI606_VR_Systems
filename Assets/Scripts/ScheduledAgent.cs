@@ -176,7 +176,7 @@ public class ScheduledAgent : MonoBehaviour
             
         }    
 
-        if (!nodeCompletedSuccessfully)
+        if (nodeCompletedSuccessfully)
         {
             Debug.Log("AGENT " + name + " Running subtree: Wander");
             nodeCompletedSuccessfully = Wander();
