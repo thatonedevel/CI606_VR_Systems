@@ -72,6 +72,9 @@ public class ScheduledAgent : MonoBehaviour
             npcNavMeshAgent.areaMask += 1 << NavMesh.GetAreaFromName(layersToEnableOnStart[i]);
             addedRuntimeNavLayers.Add(NavMesh.GetAreaFromName(layersToEnableOnStart[i]));
         }
+
+        // set initial destination
+        NavigateToLocation(agentSchedule[scheduleIndex].destinationTransform.position);
     }
 
     // Update is called once per frame
@@ -238,6 +241,11 @@ public class ScheduledAgent : MonoBehaviour
          * takes priority over other logic
          * get next location
          * predict time needed based on straight line distance + time constant */
+
+        // if the index is invalid fail
+        if (scheduleIndex >= agentSchedule.Count - 1)
+            return false;
+
         float timeNeeded = Vector3.Distance(transform.position, agentSchedule[scheduleIndex + 1].destinationTransform.position) / npcNavMeshAgent.speed + timeConstant;
 
         // check if we are within the time needed threshold
@@ -256,11 +264,9 @@ public class ScheduledAgent : MonoBehaviour
             {
                 targetVendor = null;
             }
-
-            return true;
         }
 
-        return false;
+        return true;
     }
 
     private void OnTriggerExit(Collider other)
@@ -468,13 +474,6 @@ public class ScheduledAgent : MonoBehaviour
             return false; // already moving to schedule pos
 
         // check if we're at the end of the schedule
-        if (scheduleIndex >= agentSchedule.Count)
-        {
-            // at end of index
-            // return to exit
-            return NavigateToLocation(FindNearestExit());
-        }
-
         if (!CheckNextScheduleItem())
             return false;
 
