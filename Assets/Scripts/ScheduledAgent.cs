@@ -40,7 +40,7 @@ public class ScheduledAgent : MonoBehaviour
 
     // flags used for the behaviour tree
     private bool finishedAtStand = false;
-    private bool isMoving = true;
+    [SerializeField] private bool isMoving = true;
     private bool homeTime = false;
     private bool atStand = false;
 
@@ -234,16 +234,6 @@ public class ScheduledAgent : MonoBehaviour
 
     private bool CheckNextScheduleItem()
     {
-        if (scheduleIndex + 1 >= agentSchedule.Count)
-        {
-            // at end of schedule, go home
-            homeTime = true;
-            // set destination to venue exit
-            
-            NavigateToLocation(FindNearestExit());
-            return true;
-        }
-
         /* check if we need to go to our next destination
          * takes priority over other logic
          * get next location
@@ -344,6 +334,7 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("Going to stand exit");
             atStand = false;
+            npcNavMeshAgent.isStopped = false;
             return NavigateToExit();
         }
             
@@ -354,18 +345,45 @@ public class ScheduledAgent : MonoBehaviour
 
     private bool NavigateToExit()
     {
+        /*
         // get target vendor's location
         if (targetVendor is null)
             return false;
 
-        var pos = targetVendor.GetLocationExit();
+        Vector3 pos = targetVendor.GetLocationExit();
 
-        return NavigateToLocation(pos);
+        Debug.Log("Exit position: " + pos);
+
+        return NavigateToLocation(pos, true);*/
+
+
+        // had to do a dirty hack because the above didn't work for some reason????
+
+        npcNavMeshAgent.enabled = false;
+        transform.position = new Vector3(targetVendor.GetLocationExit().x, transform.position.y, targetVendor.GetLocationExit().z);
+
+        // re enable navmesh and fix the layers
+        npcNavMeshAgent.enabled = true;
+        npcNavMeshAgent.ResetPath();
+        npcNavMeshAgent.isStopped = false;
+
+        // update layers
+        RemoveLayerFromName("Exit");
+        AddLayerFromName("Entrance");
+
+        return true;
     }
 
-    private bool NavigateToLocation(Vector3 destination)
+    private bool NavigateToLocation(Vector3 destination, bool goingToExit = false)
     {
         bool canNav = npcNavMeshAgent.SetDestination(destination);
+
+        if (goingToExit)
+        {
+            Debug.Log("did nav path calculate: " + canNav);
+            Debug.Log("Assigned dest: " + npcNavMeshAgent.destination);
+        }
+
         if (canNav)
         {
             isMoving = true;
@@ -384,20 +402,25 @@ public class ScheduledAgent : MonoBehaviour
     private bool QueueSubtree()
     {
         bool runSelectorBranch2 = false;
-
         if (targetVendor is null)
             return false;
+
+        Debug.Log("target vendor isnt null");
 
         // check we're in a queue
         if (!isInQueue)
             return false;
 
+        Debug.Log("queue flag is set properly");
+
         // check queue position
         if (targetVendor.GetMemberPositionNumber(gameObject) == 0)
         {
+            Debug.Log("agent is at front of queue");
             // check there is space for the customer
-            if (targetVendor.servingCount > targetVendor.servingCapacity)
+            if (targetVendor.servingCount < targetVendor.servingCapacity) // failed here
             {
+                Debug.Log("Checking for customer space");
                 // tell the agent to navigate to the serving spot
                 if (!NavigateToLocation(targetVendor.GetServingPosition()))
                     runSelectorBranch2 = true;
@@ -415,6 +438,7 @@ public class ScheduledAgent : MonoBehaviour
         // check if we need to run the second stage of the selector branch
         if (runSelectorBranch2)
         {
+            Debug.Log("Running second selector branch");
             // check if the queue space ahead is empty
             if (!targetVendor.CanAgentMoveToQueuePos(gameObject))
             {
@@ -422,6 +446,7 @@ public class ScheduledAgent : MonoBehaviour
                 return false;
             }
 
+            Debug.Log("Moving to queue position at: " + targetVendor.GetMemberQueuePosition(gameObject));
             // navigate to queue pos
             npcNavMeshAgent.isStopped = false;
             isInQueue = false;
@@ -441,6 +466,14 @@ public class ScheduledAgent : MonoBehaviour
         // check if we're currently moving to a scheduled location
         if (CheckScheduleForLocation(npcNavMeshAgent.destination))
             return false; // already moving to schedule pos
+
+        // check if we're at the end of the schedule
+        if (scheduleIndex >= agentSchedule.Count)
+        {
+            // at end of index
+            // return to exit
+            return NavigateToLocation(FindNearestExit());
+        }
 
         if (!CheckNextScheduleItem())
             return false;

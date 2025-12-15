@@ -15,7 +15,7 @@ public class AActivityStand : MonoBehaviour
     public float queueSpacing = 1.1f; // spacing between customers in the queue, public so it can be adjusted in inspector
     public int servingCapacity = 1;
 
-    public int servingCount { get; protected set; } = 1;
+    public int servingCount { get; protected set; } = 0;
 
     [Header("Debug / Queriable Data")]
     public bool isServingCustomer { get; protected set; } = false; // flag used to check if units in queue can move forward
