@@ -1,9 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
-using UnityEngine.Rendering;
-using TreeEditor;
-using UnityEngine.Events;
 
 public class ScheduledAgent : MonoBehaviour
 {
@@ -469,14 +466,29 @@ public class ScheduledAgent : MonoBehaviour
     // subtree for updating schedule
     private bool ScheduleCheckSubtree()
     {
+        Debug.Log("Schedule update check: checking to see if agent has path");
         // check if we're currently moving to a scheduled location
-        if (CheckScheduleForLocation(npcNavMeshAgent.destination))
-            return false; // already moving to schedule pos
+        if (npcNavMeshAgent.hasPath)
+        {
+            Debug.Log("Schedule update check: agent has path. checking if destination is in the schedule");
+            if (CheckScheduleForLocation(npcNavMeshAgent.destination))
+            {
+                Debug.Log("Schedule update check: agent is already moving to a scheduled position");
+                return false; // already moving to schedule pos
+            }
+                
+        }
 
         // check if we're at the end of the schedule
+        Debug.Log("Schedule update check: Checking if we're at the end of the schedule");
         if (!CheckNextScheduleItem())
+        {
+            Debug.Log("Schedule update check: we're at the end of the schedule");
+            homeTime = true;
             return false;
+        }
 
+        Debug.Log("Navigating to next item on schedule");
         return NavigateToLocation(agentSchedule[scheduleIndex].destinationTransform.position);
     }
 
@@ -511,6 +523,11 @@ public class ScheduledAgent : MonoBehaviour
         isInQueue = true;
 
         return NavigateToLocation(agentSchedule[scheduleIndex].destinationTransform.position);
+    }
+
+    private bool GoHomeSubtree()
+    {
+        return true;
     }
 
     // schedule end check subtree
