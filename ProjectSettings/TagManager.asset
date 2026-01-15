@@ -9,6 +9,7 @@ TagManager:
   - EntryTrigger
   - ExitTrigger
   - ServiceTransform
+  - VenueExit
   layers:
   - Default
   - TransparentFX

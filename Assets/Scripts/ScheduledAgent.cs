@@ -41,6 +41,8 @@ public class ScheduledAgent : MonoBehaviour
     private bool homeTime = false;
     private bool atStand = false;
 
+    private GameObject exitObj = null;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -527,7 +529,25 @@ public class ScheduledAgent : MonoBehaviour
 
     private bool GoHomeSubtree()
     {
-        return true;
+        if (!homeTime)
+            return true;
+
+        if (exitObj is null)
+        {
+            // search for the venue exit
+            exitObj = GameObject.FindGameObjectWithTag("VenueExit");
+
+            if (exitObj is null)
+                return false;
+        }
+
+        // navigate to the exit
+        // force reset agent
+
+        npcNavMeshAgent.ResetPath();
+        npcNavMeshAgent.enabled = true;
+
+        return NavigateToLocation(exitObj.transform.position, true);
     }
 
     // schedule end check subtree
