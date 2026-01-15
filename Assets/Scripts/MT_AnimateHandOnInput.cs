@@ -11,6 +11,7 @@ public class MT_AnimateHandOnInput : MonoBehaviour
     public InputActionProperty triggerValue;
     public InputActionProperty gripValue;
 
+    //Takes in the animator
     public Animator handAnimator; 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -22,9 +23,11 @@ public class MT_AnimateHandOnInput : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Reads the controllers values, how hard the buttons are pressed
         float trigger = triggerValue.action.ReadValue<float>();
         float grip = gripValue.action.ReadValue<float>();
-
+        
+        //The animator logic, when the value changes the animation will change
         handAnimator.SetFloat("Trigger", trigger);
         handAnimator.SetFloat("Grip", grip);
     }
