@@ -1,0 +1,20 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/DebugClock.uss?fileID=7433441132597879392&amp;guid=4650b2d60ade15943a80b07d9c815c5a&amp;type=3#DebugClock" />
+    <ui:VisualElement name="Root" style="flex-grow: 1; border-left-color: rgba(0, 0, 0, 0); border-right-color: rgba(0, 0, 0, 0); border-top-color: rgba(0, 0, 0, 0); border-bottom-color: rgba(0, 0, 0, 0);">
+        <ui:VisualElement name="ClockPanel" style="flex-grow: 1; min-width: 0%; min-height: 0%; max-width: none; max-height: none; width: 216px; height: 87px; position: absolute; background-color: rgb(255, 255, 255); border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom-right-radius: 30px; border-bottom-left-radius: 30px; top: 567px; left: 5px; border-left-color: rgb(0, 0, 0); border-right-color: rgb(0, 0, 0); border-top-color: rgb(0, 0, 0); border-bottom-color: rgb(0, 0, 0); border-top-width: 3px; border-right-width: 3px; border-bottom-width: 3px; border-left-width: 3px;">
+            <ui:VisualElement name="LabelsVBox" style="flex-grow: 1; flex-direction: row; align-self: center; width: 249px; height: 75%; justify-content: center; align-items: center;">
+                <ui:Label text="Label" name="HourLabel" data-source="project://database/Assets/SOInstances/ClockData.asset?fileID=11400000&amp;guid=9471b1629e95c47438a3f98ff53c9608&amp;type=2#ClockData" data-source-path="hours" class="clock-label" style="height: 28px; width: 79px; -unity-text-align: middle-right;">
+                    <Bindings>
+                        <ui:DataBinding property="text" data-source-path="hoursFormatted" data-source="project://database/Assets/SOInstances/ClockData.asset?fileID=11400000&amp;guid=9471b1629e95c47438a3f98ff53c9608&amp;type=2#ClockData" binding-mode="ToTarget" />
+                    </Bindings>
+                </ui:Label>
+                <ui:Label text=":" name="ColonLabel" class="clock-label" style="height: 28px; width: 17px; -unity-text-align: middle-center;" />
+                <ui:Label text="Label" name="MinuteLabel" data-source="project://database/Assets/SOInstances/ClockData.asset?fileID=11400000&amp;guid=9471b1629e95c47438a3f98ff53c9608&amp;type=2#ClockData" data-source-path="minutes" class="clock-label" style="height: 28px; width: 87px; -unity-text-align: middle-left;">
+                    <Bindings>
+                        <ui:DataBinding property="text" data-source-path="minutesFormatted" data-source="project://database/Assets/SOInstances/ClockData.asset?fileID=11400000&amp;guid=9471b1629e95c47438a3f98ff53c9608&amp;type=2#ClockData" binding-mode="ToTarget" />
+                    </Bindings>
+                </ui:Label>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
