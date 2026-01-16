@@ -80,6 +80,14 @@ public class GameTimeData
         GameClock.OnClockStarted += ClockStartListener;
     }
 
+    public GameTimeData(int hours, int minutes)
+    {
+        GameClock.OnClockStarted += ClockStartListener;
+
+        this.hours = hours;
+        this.minutes = minutes;
+    }
+
     public void ClockStartListener()
     {
         realTimeMS = GameClock.Singleton.ConvertGameTimeToRealTime(hours, minutes);
@@ -110,5 +118,15 @@ public class GameTimeData
         minutes = newMinutes;
 
         realTimeMS = GameClock.Singleton.ConvertGameTimeToRealTime(hours, minutes);
+    }
+
+    public int[] GetGameTime()
+    {
+        int[] timeArr = new int[2];
+
+        timeArr[0] = hours;
+        timeArr[1] = minutes;
+
+        return timeArr;
     }
 }
