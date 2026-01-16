@@ -192,7 +192,13 @@ public class ScheduledAgent : MonoBehaviour
     // listener for finished being served
     public void FinishedAtStandListener(GameObject customer)
     {
-        if (customer == gameObject)
+        Debug.Log("FinishedAtStandListener called");
+
+        Debug.Log("Customer that was served:" +  customer);
+
+        Debug.Log("Attached customer:" + gameObject);
+
+        if (gameObject.Equals(customer)) // comparison should be valid but doesn't work????
         {
             Debug.Log("AGENT " + name + " was served");
             // set the flag to leave the current stand
@@ -245,18 +251,34 @@ public class ScheduledAgent : MonoBehaviour
         if (scheduleIndex >= agentSchedule.Count - 1)
             return false;
 
-        float timeNeeded = Vector3.Distance(transform.position, agentSchedule[scheduleIndex + 1].destinationTransform.position) / npcNavMeshAgent.speed + timeConstant;
+        float timeNeeded = Vector3.Distance(transform.position, agentSchedule[scheduleIndex + 1].destinationTransform.position) / npcNavMeshAgent.speed;
+        
+        Debug.Log("Time needed to get to destination: " +  timeNeeded);
+
+
+        var currHr = GameClock.Singleton.GetGameWorldTimeHours();
+        var currMin = GameClock.Singleton.GetGameWorldTimeMinutes();
+
 
         // check if we are within the time needed threshold
-        if (Time.time + (timeNeeded * 1000) >= agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime())
+
+        Debug.Log("Estimated arrival time for next destination:" + Time.time + timeNeeded);
+        Debug.Log("Desired arrival time: " + agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime());
+
+        if (Time.time + timeNeeded >= agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime())
         {
             Debug.Log("Moving to next item in schedule");
             scheduleIndex++;
             navState = NavigationState.NAVIGATING;
 
+            // check the tag
+            Debug.Log("Current dest tag: " + agentSchedule[scheduleIndex].destinationTransform.tag);
+            Debug.Log("Current dest name: " + agentSchedule[scheduleIndex].destinationTransform.gameObject.name);
+
             // check if the transform is the child of an activity stand
             if (agentSchedule[scheduleIndex].destinationTransform.CompareTag("ServiceTransform"))
             {
+                Debug.Log("Destination transform belongs to a vendor stand");
                 targetVendor = agentSchedule[scheduleIndex].destinationTransform.parent.GetComponent<AActivityStand>();
             }
             else
@@ -327,7 +349,11 @@ public class ScheduledAgent : MonoBehaviour
     {
         // check if we're being served
         if (targetVendor is null)
+        {
+            Debug.Log("Target vendor is null");
             return false;
+        }
+            
 
         if (targetVendor.isServingCustomer)
             if (targetVendor.currentCustomer != gameObject)
@@ -481,6 +507,10 @@ public class ScheduledAgent : MonoBehaviour
                 
         }
 
+        // don't try to update the schedule if we are in a queue
+        if (isInQueue)
+            return false;
+
         // check if we're at the end of the schedule
         Debug.Log("Schedule update check: Checking if we're at the end of the schedule");
         if (!CheckNextScheduleItem())
@@ -632,6 +662,14 @@ public class ScheduleDestination
 {
     public Transform destinationTransform;
     public GameTimeData desiredArrivalTime;
+    public Vector3 destinationVector = Vector3.zero;
+
+    public ScheduleDestination(int hour, int minute, Transform destination)
+    {
+        desiredArrivalTime = new GameTimeData(hour, minute);
+        destinationTransform = destination;
+        destinationVector = destination.position;
+    }
 }
 
 public enum NavigationState
