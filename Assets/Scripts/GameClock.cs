@@ -41,7 +41,7 @@ public class GameClock : MonoBehaviour
         return (int)(Mathf.Floor(GetRealWorldTime() / 600) + startingHour);
     }
 
-    public int GameGameWorldTimeMinutes()
+    public int GetGameWorldTimeMinutes()
     {
         // returns the world's minute time, where 1 game minute = 10 real seconds
         return (int)Time.time / 10;
