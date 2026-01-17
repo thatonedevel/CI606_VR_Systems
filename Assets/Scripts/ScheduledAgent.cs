@@ -18,7 +18,7 @@ public class ScheduledAgent : MonoBehaviour
 
     // true destination if the agent has to queue
     private Transform trueDestination;
-    private bool isInQueue = false;
+    [SerializeField] private bool isInQueue = false;
     // reference to the stand instance if agent is going to a vendor
     [SerializeField] private AActivityStand targetVendor;
 
@@ -63,7 +63,7 @@ public class ScheduledAgent : MonoBehaviour
 
         // go through the layer lists and enable / disable the specified layers
 
-        for (int i = 0; i < layersToDisableOnStart.Count; i++) 
+        for (int i = 0; i < layersToDisableOnStart.Count; i++)
         {
             npcNavMeshAgent.areaMask -= 1 << NavMesh.GetAreaFromName(layersToDisableOnStart[i]);
             removedRuntimeNavLayers.Add(NavMesh.GetAreaFromName(layersToDisableOnStart[i]));
@@ -86,7 +86,7 @@ public class ScheduledAgent : MonoBehaviour
             Debug.Log("Is current path stale: " + npcNavMeshAgent.isPathStale);
             Debug.Log("Is the agent stopped? " + npcNavMeshAgent.isStopped);
         }
-        
+
         // cycle through the subtrees
         // use this to check success from the executed subtree
         bool nodeCompletedSuccessfully = false;
@@ -119,7 +119,7 @@ public class ScheduledAgent : MonoBehaviour
         if (nodeCompletedSuccessfully)
         {
             Debug.Log("AGENT " + name + " Running subtree: Wander");
-            nodeCompletedSuccessfully = Wander();
+            nodeCompletedSuccessfully = !Wander();
             Debug.Log("AGENT " + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
         }
 
@@ -129,7 +129,7 @@ public class ScheduledAgent : MonoBehaviour
             Debug.Log("AGENT " + name + " Running subtree: Queueing");
             nodeCompletedSuccessfully = QueueSubtree();
             Debug.Log("AGENT" + name + " completed subtree: Queuing with success status: " + nodeCompletedSuccessfully);
-            
+
             if (!nodeCompletedSuccessfully)
             {
                 Debug.Log("AGENT " + name + " Running subtree: Checking to join queue");
@@ -146,7 +146,7 @@ public class ScheduledAgent : MonoBehaviour
     {
         Debug.Log("FinishedAtStandListener called");
 
-        Debug.Log("Customer that was served:" +  customer);
+        Debug.Log("Customer that was served:" + customer);
 
         Debug.Log("Attached customer:" + gameObject);
 
@@ -156,6 +156,12 @@ public class ScheduledAgent : MonoBehaviour
             // set the flag to leave the current stand
             finishedAtStand = true;
             atStand = false;
+
+            if (targetVendor is not null)
+            {
+                Debug.Log("Removing agent from queue");
+                targetVendor.RemoveMemberFromQueue(gameObject);
+            }
 
             npcNavMeshAgent.isStopped = false;
             targetVendor = null;
@@ -167,21 +173,7 @@ public class ScheduledAgent : MonoBehaviour
 
     public void MoveInQueueListener(AActivityStand source)
     {
-        // called when we can move forward in the queue
-        if (targetVendor is null)
-        {
-            navState = NavigationState.WANDERING;
-            return;
-        }
-        else if (source != targetVendor)
-        {
-            return;
-        }
-
-        if (printQueueInfo)
-            Debug.Log("Moving forward in queue");
-        Vector3 nextPos = targetVendor.GetMemberQueuePosition(gameObject);
-        npcNavMeshAgent.SetDestination(nextPos);
+        // event fired once an agent can move forward in a queue
     }
 
     private bool Wander()
@@ -210,8 +202,8 @@ public class ScheduledAgent : MonoBehaviour
             return false;
 
         float timeNeeded = Vector3.Distance(transform.position, agentSchedule[scheduleIndex + 1].destinationTransform.position) / npcNavMeshAgent.speed;
-        
-        Debug.Log("Time needed to get to destination: " +  timeNeeded);
+
+        Debug.Log("Time needed to get to destination: " + timeNeeded);
 
 
         var currHr = GameClock.Singleton.GetGameWorldTimeHours();
@@ -222,32 +214,6 @@ public class ScheduledAgent : MonoBehaviour
 
         Debug.Log("Estimated arrival time for next destination:" + Time.time + timeNeeded);
         Debug.Log("Desired arrival time: " + agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime());
-
-        // this method of time checking doesn't seem to work
-        /*
-        if (Time.time + timeNeeded >= agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime())
-        {
-            Debug.Log("Moving to next item in schedule");
-            scheduleIndex++;
-            navState = NavigationState.NAVIGATING;
-
-            // check the tag
-            Debug.Log("Current dest tag: " + agentSchedule[scheduleIndex].destinationTransform.tag);
-            Debug.Log("Current dest name: " + agentSchedule[scheduleIndex].destinationTransform.gameObject.name);
-
-            // check if the transform is the child of an activity stand
-            if (agentSchedule[scheduleIndex].destinationTransform.CompareTag("ServiceTransform"))
-            {
-                Debug.Log("Destination transform belongs to a vendor stand");
-                targetVendor = agentSchedule[scheduleIndex].destinationTransform.parent.GetComponent<AActivityStand>();
-            }
-            else
-            {
-                targetVendor = null;
-            }
-        }
-
-        return true; */
 
         // use game time since its easier to work with
         int currentHour = GameClock.Singleton.GetGameWorldTimeHours();
@@ -330,7 +296,7 @@ public class ScheduledAgent : MonoBehaviour
             // if it exists in the other list, remove it from there
             if (addedRuntimeNavLayers.Contains(layerIndex))
                 addedRuntimeNavLayers.Remove(layerIndex);
-        }      
+        }
     }
 
     // subtree no1
@@ -342,7 +308,7 @@ public class ScheduledAgent : MonoBehaviour
             Debug.Log("Target vendor is null");
             return false;
         }
-            
+
 
         if (targetVendor.isServingCustomer)
             if (targetVendor.currentCustomer != gameObject)
@@ -357,7 +323,7 @@ public class ScheduledAgent : MonoBehaviour
             npcNavMeshAgent.isStopped = false;
             return NavigateToExit();
         }
-            
+
 
         return false;
     }
@@ -441,10 +407,9 @@ public class ScheduledAgent : MonoBehaviour
             // check there is space for the customer
             if (targetVendor.servingCount < targetVendor.servingCapacity) // failed here
             {
-                Debug.Log("Checking for customer space");
+                Debug.Log("AGENT " + name + " Checking for customer space");
                 // tell the agent to navigate to the serving spot
-                if (!NavigateToLocation(targetVendor.GetServingPosition()))
-                    runSelectorBranch2 = true;
+                return NavigateToLocation(targetVendor.GetServingPosition());
             }
             else
             {
@@ -459,23 +424,10 @@ public class ScheduledAgent : MonoBehaviour
         // check if we need to run the second stage of the selector branch
         if (runSelectorBranch2)
         {
-            Debug.Log("Running second selector branch");
-            // check if the queue space ahead is empty
-            if (!targetVendor.CanAgentMoveToQueuePos(gameObject))
-            {
-                //npcNavMeshAgent.isStopped = true;
-                return false;
-            }
+            Debug.Log("AGENT " + gameObject.name + " is moving to queue position");
 
-            Debug.Log("Moving to queue position at: " + targetVendor.GetMemberQueuePosition(gameObject));
-            // navigate to queue pos
-            npcNavMeshAgent.isStopped = false;
-            isInQueue = false;
-            atStand = true;
-            finishedAtStand = false;
-            // remove self from queue
-            targetVendor.RemoveMemberFromQueue(gameObject);
-            return NavigateToLocation(targetVendor.GetMemberQueuePosition(gameObject));
+            Vector3 position = targetVendor.GetMemberQueuePosition(gameObject);
+            return NavigateToLocation(position);
         }
 
         return false;
@@ -494,7 +446,7 @@ public class ScheduledAgent : MonoBehaviour
                 Debug.Log("Schedule update check: agent is already moving to a scheduled position");
                 return false; // already moving to schedule pos
             }
-                
+
         }
 
         // don't try to update the schedule if we are in a queue
@@ -527,20 +479,23 @@ public class ScheduledAgent : MonoBehaviour
 
         float distance = CalculatePathLength(path);
 
-        // check if the distance to the 
+        Debug.Log("Length of path from location to schedule dest: " + distance);
+
         if (targetVendor is null)
             return false;
 
+        Debug.Log("Checking if customer is in queuing distance");
         if (!targetVendor.IsCustomerInQueueingDistance(distance))
             return false;
 
+        Debug.Log("Checking if queue is full");
         // check that queue has space
-        if (targetVendor.isQueueFull)
+        if (targetVendor.GetQueueSize() >= targetVendor.GetMaxQueueSize())
             return false;
 
         // navigate to back of queue
         // reserve the space and navigate to back
-        Debug.Log("Joining Queue");
+        Debug.Log("AGENT" + gameObject.name + " Joining Queue");
         targetVendor.AddCustomerToQueue(gameObject);
         isInQueue = true;
 
@@ -644,6 +599,13 @@ public class ScheduledAgent : MonoBehaviour
         }
 
         return false;
+    }
+
+    public void ClearQueueFlag()
+    {
+        Debug.Log("Resetting queue / stand flags");
+        isInQueue = false;
+        atStand = false;
     }
 }
 

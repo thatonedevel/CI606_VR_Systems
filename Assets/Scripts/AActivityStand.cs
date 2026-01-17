@@ -7,7 +7,7 @@ using UnityEngine.AI;
 // TODO: add derivative classes for player interaction at stands
 public class AActivityStand : MonoBehaviour
 {
-    private List<GameObject> customerQueue = new List<GameObject>();
+    [SerializeField] private List<GameObject> customerQueue = new List<GameObject>();
 
 
     [Header("Queue Settings")]
@@ -22,6 +22,8 @@ public class AActivityStand : MonoBehaviour
     public GameObject currentCustomer { get; protected set; } = null;
     public bool isQueueFull { get; protected set; } = false;
 
+    [SerializeField] private bool m_isQueueFull = false;
+
     // events
     public static event Action<AActivityStand> OnCustomerLeftStand;
     public static event Action<GameObject> OnFinishedServingCustomer;
@@ -30,10 +32,19 @@ public class AActivityStand : MonoBehaviour
     private float customerServeStartTime = -1f;
     [SerializeField] private float customerServingDuration = 5f;
     [SerializeField] private Transform ExitPosition;
-    // bo
+
+    // queueing positions for agents
+    [SerializeField] private List<Vector3> queuePositions = new();
+
+    private void Start()
+    {
+        queuePositions = CalculateQueuePositions();
+    }
 
     private void Update()
     {
+        m_isQueueFull = isQueueFull;
+
         if (isServingCustomer)
         {
             //Debug.Log("Serving customer, start time: " +  customerServeStartTime);
@@ -73,6 +84,13 @@ public class AActivityStand : MonoBehaviour
             isQueueFull = customerQueue.Count < maxQueueLength;
             OnCustomerLeftStand?.Invoke(this);
             isServingCustomer = false;
+
+            if (other.gameObject.CompareTag("NPC"))
+            {
+                other.GetComponent<ScheduledAgent>().ClearQueueFlag();
+            }
+
+            Debug.Log("STAND: Customer left");
         }
     }
 
@@ -92,14 +110,9 @@ public class AActivityStand : MonoBehaviour
         int index = customerQueue.IndexOf(customer);
         Vector3 newDestination = Vector3.zero;
 
-        // check if not at front of queue
-        if (index != 0)
+        if (index != -1)
         {
-            newDestination = transform.GetChild(0).position + (transform.forward * queueSpacing * index);
-        }
-        else
-        {
-            newDestination = transform.GetChild(0).position; // stand dest position
+            newDestination = queuePositions[index];
         }
 
         return newDestination;
@@ -142,6 +155,11 @@ public class AActivityStand : MonoBehaviour
         return customerQueue.Count;
     }
 
+    public int GetMaxQueueSize()
+    {
+        return maxQueueLength;
+    }
+
     public bool CanAgentMoveToQueuePos(GameObject agent)
     {
         // check agent is in the queue
@@ -151,7 +169,7 @@ public class AActivityStand : MonoBehaviour
         // are they at position 0?
         int agentPos = customerQueue.IndexOf(agent);
 
-        if (agentPos == 0)
+        if (agentPos == 0 && Vector3.Distance(agent.transform.position, queuePositions[0]) <= 0.1f)
         {
             // at front of queue
             return false;
@@ -188,5 +206,20 @@ public class AActivityStand : MonoBehaviour
     public bool RemoveMemberFromQueue(GameObject member)
     {
         return customerQueue.Remove(member);
+    }
+
+    private List<Vector3> CalculateQueuePositions()
+    {
+        Vector3 startingPosition = transform.position + (transform.forward * 4);
+
+        List<Vector3> positions = new();
+
+        for (int i = 0; i < maxQueueLength; i++)
+        {
+            Vector3 posOffset = transform.forward * i * queueSpacing;
+            positions.Add(startingPosition + posOffset);
+        }
+
+        return positions;
     }
 }
