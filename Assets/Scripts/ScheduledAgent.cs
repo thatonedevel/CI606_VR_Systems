@@ -86,52 +86,7 @@ public class ScheduledAgent : MonoBehaviour
             Debug.Log("Is current path stale: " + npcNavMeshAgent.isPathStale);
             Debug.Log("Is the agent stopped? " + npcNavMeshAgent.isStopped);
         }
-        /*switch (navState)
-        {
-            case NavigationState.AT_DEST:
-                break;
-
-            case NavigationState.NAVIGATING:
-                // check if the target destination is an activity stand
-                if (agentSchedule[scheduleIndex].destinationTransform.parent is not null)
-                {
-                    var potentialStand = agentSchedule[scheduleIndex].destinationTransform.parent.gameObject;
-                    // transform is a child
-                    if (potentialStand.CompareTag("VenueStand"))
-                    {
-                        targetVendor = potentialStand.GetComponent<AActivityStand>();
-                        if (targetVendor is null)
-                        {
-                            navState = NavigationState.WANDERING;
-                        }
-                        // is the queue not full?
-                        if (!targetVendor.isQueueFull)
-                        {
-                            // start navigating to the back of the queue
-                            npcNavMeshAgent.SetDestination(targetVendor.GetBackOfQueuePosition());
-                            navState = NavigationState.GOING_TO_BACK_OF_QUEUE;
-                        }
-                    }
-                }
-                break;
-
-            case NavigationState.GOING_TO_BACK_OF_QUEUE:
-                // check back of queue position
-                //NavigateToBackOfQueue();
-                break;
-            case NavigationState.QUEUEING:
-                //CheckIfAtFrontOfQueue();
-                //HandleAgentQueuing();
-                break;
-            case NavigationState.WANDERING:
-                Wander();
-                break;
-            default:
-                break;
-        }
-        //MoveToQueuePoint();
-        CheckNextScheduleItem();*/
-
+        
         // cycle through the subtrees
         // use this to check success from the executed subtree
         bool nodeCompletedSuccessfully = false;
@@ -161,17 +116,19 @@ public class ScheduledAgent : MonoBehaviour
             nodeCompletedSuccessfully = GoHomeSubtree();
         }
 
+        if (nodeCompletedSuccessfully)
+        {
+            Debug.Log("AGENT " + name + " Running subtree: Wander");
+            nodeCompletedSuccessfully = Wander();
+            Debug.Log("AGENT " + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
+        }
+
         // selector branch set
         if (nodeCompletedSuccessfully)
         {
-            
-
-            //if (!nodeCompletedSuccessfully)
-            //{
-                Debug.Log("AGENT " + name + " Running subtree: Queueing");
-                nodeCompletedSuccessfully = QueueSubtree();
-                Debug.Log("AGENT" + name + " completed subtree: Queuing with success status: " + nodeCompletedSuccessfully);
-            //}
+            Debug.Log("AGENT " + name + " Running subtree: Queueing");
+            nodeCompletedSuccessfully = QueueSubtree();
+            Debug.Log("AGENT" + name + " completed subtree: Queuing with success status: " + nodeCompletedSuccessfully);
             
             if (!nodeCompletedSuccessfully)
             {
@@ -179,24 +136,7 @@ public class ScheduledAgent : MonoBehaviour
                 nodeCompletedSuccessfully = QueueCheckSubtree();
                 Debug.Log("AGENT " + name + " completed subtree: Checking to join queue with success status: " + nodeCompletedSuccessfully);
             }
-            
-            //if (!nodeCompletedSuccessfully)
-            //{
-            //    Debug.Log("AGENT " + name + " Running subtree: Checking for schedule end");
-            //    nodeCompletedSuccessfully = CheckIfAtEndOfSchedule();
-            //    Debug.Log("AGENT " + name + " completed subtree: Checking for schedule end with success status: " + nodeCompletedSuccessfully);
-            //}
-            
-            
-        }    
-
-        if (nodeCompletedSuccessfully)
-        {
-            Debug.Log("AGENT " + name + " Running subtree: Wander");
-            nodeCompletedSuccessfully = Wander();
-            Debug.Log("AGENT " + name + " completed subtree: Wander with success status: " + nodeCompletedSuccessfully);
         }
-            
     }
 
 
@@ -218,6 +158,7 @@ public class ScheduledAgent : MonoBehaviour
             atStand = false;
 
             npcNavMeshAgent.isStopped = false;
+            targetVendor = null;
 
             // navigate to the stand exit from here
             NavigateToLocation(lastVendorExit, true);
@@ -246,7 +187,7 @@ public class ScheduledAgent : MonoBehaviour
     private bool Wander()
     {
         // queue check bc i messed up the behaviour tree and im a bit lazy to fix it
-        if (isInQueue)
+        if (isInQueue || targetVendor is not null)
             return false;
 
         // wondering - move to a location, pick a random direction, then move
