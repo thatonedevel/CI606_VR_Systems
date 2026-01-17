@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
+using System.Data.Common;
 
 public class ScheduledAgent : MonoBehaviour
 {
@@ -9,7 +10,7 @@ public class ScheduledAgent : MonoBehaviour
 
     [Header("Navigation Data")]
     [SerializeField] private List<ScheduleDestination> agentSchedule = new List<ScheduleDestination>();
-    [SerializeField] private int scheduleIndex = 0;
+    [SerializeField] private int scheduleIndex = -1;
     [SerializeField] private NavigationState navState = NavigationState.WANDERING;
     [SerializeField] private float distanceThreshold = 1f;
     [SerializeField] private float timeConstant; // time constant, seconds
@@ -43,6 +44,8 @@ public class ScheduledAgent : MonoBehaviour
 
     private GameObject exitObj = null;
 
+    private Vector3 lastVendorExit = Vector3.zero;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -72,13 +75,17 @@ public class ScheduledAgent : MonoBehaviour
             addedRuntimeNavLayers.Add(NavMesh.GetAreaFromName(layersToEnableOnStart[i]));
         }
 
-        // set initial destination
-        NavigateToLocation(agentSchedule[scheduleIndex].destinationTransform.position);
+        // don't set an initial destination - that means it wont work
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (npcNavMeshAgent.hasPath)
+        {
+            Debug.Log("Is current path stale: " + npcNavMeshAgent.isPathStale);
+            Debug.Log("Is the agent stopped? " + npcNavMeshAgent.isStopped);
+        }
         /*switch (navState)
         {
             case NavigationState.AT_DEST:
@@ -149,6 +156,11 @@ public class ScheduledAgent : MonoBehaviour
         nodeCompletedSuccessfully = true;
         Debug.Log("AGENT " + name + " completed subtree: Checking schedule for destination update with success status: " + nodeCompletedSuccessfully);
 
+        if (homeTime)
+        {
+            nodeCompletedSuccessfully = GoHomeSubtree();
+        }
+
         // selector branch set
         if (nodeCompletedSuccessfully)
         {
@@ -204,6 +216,11 @@ public class ScheduledAgent : MonoBehaviour
             // set the flag to leave the current stand
             finishedAtStand = true;
             atStand = false;
+
+            npcNavMeshAgent.isStopped = false;
+
+            // navigate to the stand exit from here
+            NavigateToLocation(lastVendorExit, true);
         }
     }
 
@@ -265,6 +282,8 @@ public class ScheduledAgent : MonoBehaviour
         Debug.Log("Estimated arrival time for next destination:" + Time.time + timeNeeded);
         Debug.Log("Desired arrival time: " + agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime());
 
+        // this method of time checking doesn't seem to work
+        /*
         if (Time.time + timeNeeded >= agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetRealTime())
         {
             Debug.Log("Moving to next item in schedule");
@@ -280,6 +299,35 @@ public class ScheduledAgent : MonoBehaviour
             {
                 Debug.Log("Destination transform belongs to a vendor stand");
                 targetVendor = agentSchedule[scheduleIndex].destinationTransform.parent.GetComponent<AActivityStand>();
+            }
+            else
+            {
+                targetVendor = null;
+            }
+        }
+
+        return true; */
+
+        // use game time since its easier to work with
+        int currentHour = GameClock.Singleton.GetGameWorldTimeHours();
+        int currentMin = GameClock.Singleton.GetGameWorldTimeMinutes();
+
+        // get time the agent is meant to be at next location
+        int[] nextLocationTime = agentSchedule[scheduleIndex + 1].desiredArrivalTime.GetGameTime();
+
+        if (currentHour >= nextLocationTime[0] && currentMin >= nextLocationTime[1])
+        {
+            // get ready to go to the next location - increment the schedule index & update target vendor
+
+            Debug.Log("Moving to next item in schedule");
+            scheduleIndex++;
+
+            // check if transform is a service transform - if it is, then we're going to a vendor
+            if (agentSchedule[scheduleIndex].destinationTransform.CompareTag("ServiceTransform"))
+            {
+                Debug.Log("Destination is part of a vendor");
+                targetVendor = agentSchedule[scheduleIndex].destinationTransform.GetComponentInParent<AActivityStand>();
+                lastVendorExit = targetVendor.GetLocationExit();
             }
             else
             {
@@ -413,6 +461,7 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("did nav path calculate: " + canNav);
             Debug.Log("Assigned dest: " + npcNavMeshAgent.destination);
+            Debug.Log("Path status: " + npcNavMeshAgent.pathStatus);
         }
 
         if (canNav)
@@ -473,7 +522,7 @@ public class ScheduledAgent : MonoBehaviour
             // check if the queue space ahead is empty
             if (!targetVendor.CanAgentMoveToQueuePos(gameObject))
             {
-                npcNavMeshAgent.isStopped = true;
+                //npcNavMeshAgent.isStopped = true;
                 return false;
             }
 
