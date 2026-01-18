@@ -3,6 +3,7 @@ using UnityEngine.AI;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
+using UnityEngine.Rendering;
 
 public class ScheduledAgent : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class ScheduledAgent : MonoBehaviour
     [SerializeField] private float distanceThreshold = 1f;
     [SerializeField] private float timeConstant; // time constant, seconds
     [SerializeField][Tooltip("Maximum Radius to use when choosing a random destination")] private float wanderRadius = 10f;
+    [SerializeField] private bool generateSchedule = false;
 
     // true destination if the agent has to queue
     private Transform trueDestination;
@@ -76,7 +78,9 @@ public class ScheduledAgent : MonoBehaviour
             addedRuntimeNavLayers.Add(NavMesh.GetAreaFromName(layersToEnableOnStart[i]));
         }
 
-        // don't set an initial destination - that means it wont work
+        // if we need to gen a schedule, do it
+        if (generateSchedule)
+            GenerateSchedule();
     }
 
     // Update is called once per frame
@@ -645,6 +649,55 @@ public class ScheduledAgent : MonoBehaviour
 
         isInQueue = false;
     }
+
+    private void GenerateSchedule()
+    {
+        agentSchedule.Clear();
+
+        // method used to generate a schedule for dynamically spawned agents
+        // get all stand transforms
+        int minute = GameClock.Singleton.GetGameWorldTimeMinutes();
+        int hour = GameClock.Singleton.GetGameWorldTimeHours();
+
+        Transform loc = null;
+
+        GameObject[] stands = GameObject.FindGameObjectsWithTag("ServiceTransform");
+        GameObject[] observationPositions = GameObject.FindGameObjectsWithTag("ObservationPosition");
+
+        int standCount = Random.Range(0, stands.Length);
+        int obsPosCount = Random.Range(0, observationPositions.Length);
+
+        for (int i = 0; i < Random.Range(3, standCount + obsPosCount); i++)
+        {
+            // roll a 0 or 1 to see which type of location to add
+            if (Random.Range(0, 1)  == 0)
+            {
+                // stand
+                loc = stands[Random.Range(0, stands.Length - 1)].transform;
+                // generate a time
+
+            }
+            else
+            {
+                // observation position
+                loc = observationPositions[Random.Range(0, observationPositions.Length - 1)].transform;
+            }
+
+            var dest = new ScheduleDestination(hour, minute, loc);
+
+            agentSchedule.Add(dest);
+
+            // increase time by random amount
+
+            minute += Random.Range(5, 15);
+
+            if (minute >= 60)
+            {
+                hour += minute / 60;
+                minute -= 60;
+            }
+        }
+    }
 }
 
 [System.Serializable]
@@ -656,7 +709,18 @@ public class ScheduleDestination
 
     public ScheduleDestination(int hour, int minute, Transform destination)
     {
-        desiredArrivalTime = new GameTimeData(hour, minute);
+        int extraHours = 0;
+        int extraMinutes = 0;
+
+        if (minute >= 60)
+        {
+            // wrap it to hours
+            extraHours = minute / 60;
+            extraMinutes = minute % 60;
+        }
+
+
+        desiredArrivalTime = new GameTimeData(hour + extraHours, minute + extraMinutes);
         destinationTransform = destination;
         destinationVector = destination.position;
     }

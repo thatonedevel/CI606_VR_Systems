@@ -10,6 +10,7 @@ TagManager:
   - ExitTrigger
   - ServiceTransform
   - VenueExit
+  - ObservationPosition
   layers:
   - Default
   - TransparentFX

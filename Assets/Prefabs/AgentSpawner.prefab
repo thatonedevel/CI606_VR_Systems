@@ -44,3 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df6f40d54ecaf2047a26c789e4c57910, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  agentPrefabs:
+  - {fileID: 8052203777804326242, guid: 2ab8ec38c4a89374f96e29cc2289ad2e, type: 3}
+  agentSpawnInterval: 5
+  agentSpawnUpperLimit: 50
