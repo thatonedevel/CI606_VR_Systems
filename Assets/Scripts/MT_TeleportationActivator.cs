@@ -20,6 +20,11 @@ public class MT_TeleportationActivator : MonoBehaviour
         //In simple it activates when the button is pressed
         teleportActivatorAction.action.performed += Action_performed;
     }
+    //Added from this tutorial for consistancey: https://youtu.be/IVkQL-ECeN4?si=EiH7lQxJtdntwOTg
+    private void OnDestroy()
+    {
+        teleportActivatorAction.action.performed -= Action_performed;
+    }
 
     //So when it is performed it sets the object to true
     private void Action_performed(InputAction.CallbackContext obj)
