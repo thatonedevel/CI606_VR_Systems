@@ -43,6 +43,8 @@ public class AActivityStand : MonoBehaviour
 
     private void Update()
     {
+        isQueueFull = customerQueue.Count >= maxQueueLength; // update this every frame as on adding / removing wont work
+
         m_isQueueFull = isQueueFull;
 
         if (isServingCustomer)
@@ -100,7 +102,7 @@ public class AActivityStand : MonoBehaviour
         {
             customerQueue.Add(customer);
 
-            isQueueFull = customerQueue.Count == maxQueueLength;
+            isQueueFull = customerQueue.Count >= maxQueueLength;
         }
     }
 
