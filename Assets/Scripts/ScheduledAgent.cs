@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 
 public class ScheduledAgent : MonoBehaviour
 {
@@ -94,14 +95,16 @@ public class ScheduledAgent : MonoBehaviour
         // this looks super ugly but its what we have to do lol
         nodeCompletedSuccessfully = UpdateMovementStatus();
 
+        Debug.Log("Ret status from movement update: " + nodeCompletedSuccessfully);
+
         // rest run under if statement checks
-        if (!nodeCompletedSuccessfully)
-        {
+        //if (!nodeCompletedSuccessfully)
+        //{
             Debug.Log("AGENT " + name + " Running subtree: Receiving customer service");
             nodeCompletedSuccessfully = AtCustomerServiceSubtree();
             Debug.Log("AGENT " + name + " completed subtree: Receiving customer service with success status: " + nodeCompletedSuccessfully);
             Debug.Log("atStand value:" + atStand);
-        }
+        //}
 
         // check if we're still being served
         // if not then we can go into the selector
@@ -154,14 +157,12 @@ public class ScheduledAgent : MonoBehaviour
         {
             Debug.Log("AGENT " + name + " was served");
             // set the flag to leave the current stand
+
+            RemoveAgetFromStandQueues();
             finishedAtStand = true;
             atStand = false;
 
-            if (targetVendor is not null)
-            {
-                Debug.Log("Removing agent from queue");
-                targetVendor.RemoveMemberFromQueue(gameObject);
-            }
+            // get the vendor that the agent is at
 
             npcNavMeshAgent.isStopped = false;
             targetVendor = null;
@@ -263,6 +264,15 @@ public class ScheduledAgent : MonoBehaviour
             AddLayerFromName("Entrance");
             // recalc path with current dest.
             NavigateToLocation(npcNavMeshAgent.destination);
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("VenueStand"))
+        {
+            npcNavMeshAgent.isStopped = true;
+            atStand = true;
         }
     }
 
@@ -403,17 +413,26 @@ public class ScheduledAgent : MonoBehaviour
         // check queue position
         if (targetVendor.GetMemberPositionNumber(gameObject) == 0)
         {
-            Debug.Log("agent is at front of queue");
-            // check there is space for the customer
-            if (targetVendor.servingCount < targetVendor.servingCapacity) // failed here
+            // check if we're in the serving position
+            if (atStand)
             {
-                Debug.Log("AGENT " + name + " Checking for customer space");
-                // tell the agent to navigate to the serving spot
-                return NavigateToLocation(targetVendor.GetServingPosition());
+                npcNavMeshAgent.isStopped = true;
+                return true;
             }
             else
             {
-                runSelectorBranch2 = true;
+                Debug.Log("agent is at front of queue");
+                // check there is space for the customer
+                if (targetVendor.servingCount < targetVendor.servingCapacity) // failed here
+                {
+                    Debug.Log("AGENT " + name + " Checking for customer space");
+                    // tell the agent to navigate to the serving spot
+                    return NavigateToLocation(targetVendor.GetServingPosition());
+                }
+                else
+                {
+                    runSelectorBranch2 = true;
+                }
             }
         }
         else
@@ -490,7 +509,7 @@ public class ScheduledAgent : MonoBehaviour
 
         Debug.Log("Checking if queue is full");
         // check that queue has space
-        if (targetVendor.GetQueueSize() >= targetVendor.GetMaxQueueSize())
+        if (targetVendor.isQueueFull)
             return false;
 
         // navigate to back of queue
@@ -606,6 +625,25 @@ public class ScheduledAgent : MonoBehaviour
         Debug.Log("Resetting queue / stand flags");
         isInQueue = false;
         atStand = false;
+    }
+
+
+    private void RemoveAgetFromStandQueues()
+    {
+        GameObject[] standObjs = GameObject.FindGameObjectsWithTag("VenueStand");
+        AActivityStand[] stands = new AActivityStand[standObjs.Length];
+
+        for (int i = 0; i < standObjs.Length; i++)
+        {
+            stands[i] = standObjs[i].GetComponent<AActivityStand>();
+        }
+
+        for (int i = 0; i < stands.Length; i++)
+        {
+            stands[i].RemoveMemberFromQueue(gameObject);
+        }
+
+        isInQueue = false;
     }
 }
 
