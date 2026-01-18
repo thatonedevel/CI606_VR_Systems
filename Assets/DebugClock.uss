@@ -1,0 +1,4 @@
+.clock-label {
+    font-size: 30px;
+    -unity-text-align: middle-center;
+}

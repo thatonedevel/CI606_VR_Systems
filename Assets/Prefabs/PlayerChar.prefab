@@ -1286,7 +1286,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 4378585637886475017}
+  m_Father: {fileID: 232246151151302468}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3919729566071182066
 MonoBehaviour:
@@ -1509,7 +1509,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6188900264006483448}
   - {fileID: 5220889870165810188}
   m_Father: {fileID: 7712820239167637138}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1526,7 +1525,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lobbySceneName: LobbySceneTest
-  simulationSceneName: test
+  simulationSceneName: TestVrInteractions
   startScreen: {fileID: 2296159113745426234}
   pauseScreen: {fileID: 4118182590796158142}
   timeText: {fileID: 8910502211785450459}
@@ -5297,7 +5296,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6188900264006483448}
   m_Father: {fileID: 7712820239167637138}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6691244089480226393
