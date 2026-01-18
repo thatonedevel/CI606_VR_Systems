@@ -55,7 +55,7 @@ public class ScheduledAgent : MonoBehaviour
         // make sure radius is a positive value
         wanderRadius = Mathf.Abs(wanderRadius);
 
-        if (npcNavMeshAgent is null)
+        if (npcNavMeshAgent == null)
         {
             npcNavMeshAgent = GetComponent<NavMeshAgent>();
         }
@@ -527,17 +527,37 @@ public class ScheduledAgent : MonoBehaviour
 
     private bool GoHomeSubtree()
     {
+        //Had the null error, was solved by replacing is null to unities default == null
+        //Basicly is null can't be trusted
+        //https://discussions.unity.com/t/is-null-returns-false-on-null-objects/821933
+        //https://unity.huh.how/unity-null.html
         if (!homeTime)
             return true;
 
-        if (exitObj is null)
+        if (exitObj == null)
         {
             // search for the venue exit
             exitObj = GameObject.FindGameObjectWithTag("VenueExit");
 
-            if (exitObj is null)
+            if (exitObj == null)
                 return false;
         }
+        if (npcNavMeshAgent == null)
+        {
+            return false;
+        }
+        //If navmesh accidently got disabled sets it to true
+        if (!npcNavMeshAgent.enabled)
+        {
+            npcNavMeshAgent.enabled = true;
+        }
+        //If the npc agent is not on navmesh won't work (if they got flinged off it)
+        //https://docs.unity3d.com/540/Documentation/ScriptReference/NavMeshAgent-isOnNavMesh.html
+        /*
+        if (!npcNavMeshAgent.isOnNavMesh)
+        {
+            return false;
+        }*/
 
         // navigate to the exit
         // force reset agent
