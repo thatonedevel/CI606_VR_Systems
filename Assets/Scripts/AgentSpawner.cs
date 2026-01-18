@@ -11,14 +11,14 @@ public class AgentSpawner : MonoBehaviour
 
     private int agentCount = 0;
 
-    void Start()
+    private void Start()
     {
         nextSpawnTime = Time.time + agentSpawnInterval;
         VenueExit.OnAgentDestroyed += OnAgentDestroyed;
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (Time.time >= nextSpawnTime)
         {
@@ -27,6 +27,9 @@ public class AgentSpawner : MonoBehaviour
                 int spawnIndex = Random.Range(0, agentPrefabs.Length - 1);
                 Instantiate(agentPrefabs[spawnIndex]);
                 agentCount++;
+
+                // update spawn time you doofus
+                nextSpawnTime = Time.time + agentSpawnInterval;
             }
         }
     }

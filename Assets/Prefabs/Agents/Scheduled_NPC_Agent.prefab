@@ -127,6 +127,7 @@ MonoBehaviour:
   distanceThreshold: 1
   timeConstant: 0
   wanderRadius: 50
+  generateSchedule: 1
   isInQueue: 0
   targetVendor: {fileID: 0}
   printQueueInfo: 0
