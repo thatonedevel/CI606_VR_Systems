@@ -1525,7 +1525,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lobbySceneName: LobbySceneTest
-  simulationSceneName: TestVrInteractions
+  simulationSceneName: Demo
   startScreen: {fileID: 2296159113745426234}
   pauseScreen: {fileID: 4118182590796158142}
   timeText: {fileID: 8910502211785450459}
