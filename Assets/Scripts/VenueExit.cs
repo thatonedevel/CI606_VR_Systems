@@ -12,6 +12,7 @@ public class VenueExit : MonoBehaviour
         if (other.CompareTag("NPC"))
         {
             Destroy(gameObject);
+            OnAgentDestroyed.Invoke();
         }
     }
 }

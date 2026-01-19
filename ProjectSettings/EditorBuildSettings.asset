@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/LobbySceneTest.unity
     guid: 2e37e676a289515469bc801463c69194
   - enabled: 1
+    path: Assets/Scenes/Demo.unity
+    guid: d23346e2226969b4d94dba703978fcb4
+  - enabled: 1
     path: Assets/Scenes/TestVrInteractions.unity
     guid: eb860f1162e865b41a7e2ba6cc152678
   - enabled: 1
