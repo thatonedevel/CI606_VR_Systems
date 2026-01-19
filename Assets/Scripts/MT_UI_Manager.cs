@@ -26,11 +26,13 @@ public class MT_UI_Manager : MonoBehaviour
         {
             startScreen.SetActive(true);
             pauseScreen.SetActive(false);
+            
         }
         else if (sceneName == simulationSceneName)
         {
             startScreen.SetActive(false);
             pauseScreen.SetActive(true);
+           
         }
     }
     //To freeze and unfreeze time Time.timeScale is set to 0 to freze and 1 to undo
@@ -56,6 +58,7 @@ public class MT_UI_Manager : MonoBehaviour
     {
         //Ensuring that the time is no longer frozen before the scene swap
         TimeUnfreze();
+        
         //This is how to load scene
         //https://discussions.unity.com/t/how-to-switch-between-scenes/189643
         SceneManager.LoadScene(simulationSceneName);

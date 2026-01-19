@@ -82,6 +82,12 @@ public class ScheduledAgent : MonoBehaviour
         if (generateSchedule)
             GenerateSchedule();
     }
+    private void OnDestroy()
+    {
+        //Unsubscribing on shut down too reduce potential risk of memory leaks
+        AActivityStand.OnFinishedServingCustomer -= FinishedAtStandListener;
+        
+    }
 
     // Update is called once per frame
     void Update()
